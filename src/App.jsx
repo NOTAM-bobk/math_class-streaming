@@ -12,6 +12,15 @@ import { GAMES_URL, HERO, ROWS } from "./lib/constants.js";
 import { relativeTime } from "./lib/format.js";
 import { readHistory, recordHistory, writeHistory } from "./lib/history.js";
 import {
+  clearProgress as clearAllProgress,
+  readProgress,
+} from "./lib/progress.js";
+import {
+  applySettings,
+  readSettings,
+  writeSettings,
+} from "./lib/settings.js";
+import {
   isSaved as isInWatchlist,
   readWatchlist,
   toggleWatchlist,
@@ -26,7 +35,17 @@ export default function App() {
   const [hero, setHero] = useState({ status: "loading", meta: null });
   const [recent, setRecent] = useState(readHistory);
   const [watchlist, setWatchlist] = useState(readWatchlist);
+  const [progress, setProgress] = useState(readProgress);
+  const [settings, setSettings] = useState(readSettings);
   const [toast, setToast] = useState(null);
+  const [installPrompt, setInstallPrompt] = useState(
+    () => window.__pwaInstallPrompt || null
+  );
+  const [installed, setInstalled] = useState(
+    () =>
+      window.matchMedia?.("(display-mode: standalone)")?.matches ||
+      window.navigator.standalone === true
+  );
   const searchToken = useRef(0);
   const toastTimer = useRef(0);
 
@@ -37,6 +56,27 @@ export default function App() {
   }, []);
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
+
+  useEffect(() => {
+    applySettings(settings);
+    writeSettings(settings);
+  }, [settings]);
+
+  useEffect(() => {
+    const onPrompt = () => setInstallPrompt(window.__pwaInstallPrompt || null);
+    const onInstalled = () => {
+      setInstalled(true);
+      setInstallPrompt(null);
+    };
+    window.addEventListener("mcn:install-available", onPrompt);
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("mcn:install-available", onPrompt);
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -64,12 +104,15 @@ export default function App() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [player]);
 
-  const openPlayer = useCallback((meta, autoplay = true) => {
-    if (!meta) return;
-    setRecent(recordHistory(meta));
-    setPlayer({ meta, autoplay });
-    window.scrollTo(0, 0);
-  }, []);
+  const openPlayer = useCallback(
+    (meta, autoplay = true) => {
+      if (!meta) return;
+      setRecent(recordHistory(meta));
+      setPlayer({ meta, autoplay: Boolean(autoplay) && settings.autoplay });
+      window.scrollTo(0, 0);
+    },
+    [settings.autoplay]
+  );
 
   const closePlayer = useCallback(() => {
     setPlayer(null);
@@ -123,6 +166,60 @@ export default function App() {
     },
     [notify, watchlist]
   );
+
+  const progressFor = useCallback(
+    (meta) => {
+      if (!meta) return null;
+      const base = `${meta.type || "movie"}-${meta.id || meta.imdb_id || ""}`;
+      const direct = progress[base];
+      if (direct) return direct;
+      let best = null;
+      for (const [key, entry] of Object.entries(progress)) {
+        if (!key.startsWith(`${base}-s`)) continue;
+        if (!best || (entry.updatedAt || 0) > (best.updatedAt || 0)) {
+          best = entry;
+        }
+      }
+      return best;
+    },
+    [progress]
+  );
+
+  const refreshProgress = useCallback(() => {
+    setProgress(readProgress());
+  }, []);
+
+  const updateSetting = useCallback((key, value) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const resetProgress = useCallback(() => {
+    if (!window.confirm("Reset every saved playback position?")) return;
+    clearAllProgress();
+    setProgress({});
+    notify("Playback progress cleared");
+  }, [notify]);
+
+  const installApp = useCallback(async () => {
+    const prompt = window.__pwaInstallPrompt;
+    if (!prompt) {
+      notify("Use your browser's Install app menu");
+      return;
+    }
+    try {
+      prompt.prompt();
+      const choice = await prompt.userChoice;
+      window.__pwaInstallPrompt = null;
+      setInstallPrompt(null);
+      notify(
+        choice?.outcome === "accepted"
+          ? "Installing math_class:network…"
+          : "Install dismissed"
+      );
+    } catch {
+      notify("This browser can't install the app right now.");
+    }
+  }, [notify]);
 
   const submitSearch = useCallback(
     async (raw) => {
@@ -208,12 +305,6 @@ export default function App() {
     setFilter(next);
   };
 
-  const clearRecent = () => {
-    if (!window.confirm("Clear your recently watched list?")) return;
-    writeHistory([]);
-    setRecent([]);
-  };
-
   const visibleRows =
     filter === "all" ? ROWS : ROWS.filter((row) => row.type === filter);
 
@@ -237,6 +328,13 @@ export default function App() {
         watchlistCount={watchlist.length}
         watchlistActive={view === "watchlist" && !player && !search}
         onWatchlist={showWatchlist}
+        settings={settings}
+        onUpdateSetting={updateSetting}
+        progressCount={Object.keys(progress).length}
+        onClearProgress={resetProgress}
+        installAvailable={Boolean(installPrompt)}
+        installed={installed}
+        onInstall={installApp}
       />
 
       {player ? (
@@ -246,6 +344,8 @@ export default function App() {
           onBack={closePlayer}
           saved={saved(player.meta)}
           onToggleSave={toggleSave}
+          settings={settings}
+          onProgressSaved={refreshProgress}
         />
       ) : search ? (
         <SearchResults
@@ -255,6 +355,7 @@ export default function App() {
           onRetry={() => submitSearch(search.query)}
           isSaved={saved}
           onToggleSave={toggleSave}
+          progressFor={progressFor}
         />
       ) : view === "watchlist" ? (
         <WatchlistView
@@ -262,6 +363,7 @@ export default function App() {
           onOpen={openPlayer}
           onToggleSave={toggleSave}
           onBrowse={browse}
+          progressFor={progressFor}
         />
       ) : (
         <main id="main" className="view-enter">
@@ -280,6 +382,7 @@ export default function App() {
                 onOpen={openPlayer}
                 isSaved={saved}
                 onToggleSave={toggleSave}
+                progressFor={progressFor}
               />
             ) : null}
 
@@ -290,6 +393,7 @@ export default function App() {
                 onOpen={openPlayer}
                 isSaved={saved}
                 onToggleSave={toggleSave}
+                progressFor={progressFor}
                 index={1}
                 metaText={(item) => `Watched ${relativeTime(item.watchedAt)}`}
                 action={
@@ -313,6 +417,7 @@ export default function App() {
                 onOpen={openPlayer}
                 isSaved={saved}
                 onToggleSave={toggleSave}
+                progressFor={progressFor}
                 index={index + (filter === "all" ? 2 : 1)}
               />
             ))}
@@ -322,11 +427,11 @@ export default function App() {
 
       <footer className="footer">
         <p>
-          <strong>math_class streaming</strong> is part of the{" "}
+          <strong>math_class:network</strong> is part of the{" "}
           <a href={GAMES_URL}>math_class unblocked games</a> network.
         </p>
         <p className="footer-note">
-          Catalog from Cinemeta. Playback embedded from VidFast.
+          Catalog from Cinemeta. Playback proxied from VidFast.
         </p>
       </footer>
 
