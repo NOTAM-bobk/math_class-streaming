@@ -2,6 +2,77 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Route the Adcash library's own requests (format scripts, zone config,
+         ad calls, beacons) through the same-origin proxy as well. -->
+    <script>
+      (function () {
+        var AD_HOSTS =
+          /(^|\.)(acscdn\.com|adcash\.com|rapidadexchange\.com|usrpubtrck\.com)$/i;
+        var PROXY = "/api/adcash/";
+        function rewrite(url) {
+          try {
+            var parsed = new URL(url, window.location.href);
+            if (parsed.origin === window.location.origin) {
+              return parsed.pathname.indexOf("/script/") === 0
+                ? "/api/adcash" + parsed.pathname + parsed.search
+                : url;
+            }
+            if (!AD_HOSTS.test(parsed.hostname)) return url;
+            return PROXY + parsed.hostname + parsed.pathname + parsed.search;
+          } catch (error) {
+            return url;
+          }
+        }
+        function patchSrc(proto) {
+          var descriptor = proto && Object.getOwnPropertyDescriptor(proto, "src");
+          if (!descriptor || !descriptor.set) return;
+          Object.defineProperty(proto, "src", {
+            configurable: true,
+            enumerable: descriptor.enumerable,
+            get: descriptor.get,
+            set: function (value) {
+              descriptor.set.call(this, rewrite(value));
+            },
+          });
+        }
+        patchSrc(window.HTMLScriptElement && HTMLScriptElement.prototype);
+        patchSrc(window.HTMLImageElement && HTMLImageElement.prototype);
+        patchSrc(window.HTMLIFrameElement && HTMLIFrameElement.prototype);
+
+        var setAttribute = Element.prototype.setAttribute;
+        Element.prototype.setAttribute = function (name, value) {
+          if (typeof value === "string" && /^(src|href)$/i.test(name)) {
+            return setAttribute.call(this, name, rewrite(value));
+          }
+          return setAttribute.call(this, name, value);
+        };
+
+        if (window.fetch) {
+          var nativeFetch = window.fetch;
+          window.fetch = function (input, init) {
+            return typeof input === "string"
+              ? nativeFetch.call(this, rewrite(input), init)
+              : nativeFetch.call(this, input, init);
+          };
+        }
+
+        if (window.XMLHttpRequest) {
+          var open = XMLHttpRequest.prototype.open;
+          XMLHttpRequest.prototype.open = function (method, url) {
+            arguments[1] = rewrite(url);
+            return open.apply(this, arguments);
+          };
+        }
+
+        if (navigator.sendBeacon) {
+          var beacon = navigator.sendBeacon.bind(navigator);
+          navigator.sendBeacon = function (url, data) {
+            return beacon(rewrite(url), data);
+          };
+        }
+      })();
+    </script>
+
     <!-- Adcash Autotag, loaded through our Vercel proxy so a blocked adcash CDN
          does not stop it; falls back to the CDN when the proxy is unavailable. -->
     <script>
