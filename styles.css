@@ -318,60 +318,83 @@ main { padding-top: 20px; }
 
 .billboard {
   position: relative;
-  overflow: hidden;
-  min-height: 340px;
+  min-height: clamp(430px, 64vh, 620px);
   display: flex;
   align-items: flex-end;
+  overflow: hidden;
   isolation: isolate;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: #101012;
+  box-shadow: var(--shadow-surface);
 }
 
+/* Kept as the offline fallback behind the artwork image. */
 .billboard-art {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background:
+    radial-gradient(120% 140% at 78% 10%, rgba(255, 255, 255, 0.1), transparent 55%),
+    linear-gradient(150deg, #17171a 0%, #101012 55%, #0b0b0d 100%);
+}
+
+.billboard-media { position: absolute; inset: 0; z-index: -2; }
+.billboard-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 24%;
+  opacity: 0.92;
+}
+
+.billboard-scrim {
   position: absolute;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(120% 140% at 82% 18%, rgba(94, 234, 212, 0.16), transparent 55%),
-    radial-gradient(90% 120% at 60% 0%, rgba(129, 140, 248, 0.18), transparent 60%),
-    linear-gradient(115deg, #101012 0%, #17171b 42%, #0c0c0e 100%);
-}
-.billboard-art::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(9, 9, 11, 0.94) 0%, rgba(9, 9, 11, 0.72) 46%, rgba(9, 9, 11, 0.12) 100%),
-    linear-gradient(0deg, rgba(9, 9, 11, 0.9), transparent 55%);
+    linear-gradient(90deg, rgba(9, 9, 11, 0.96) 0%, rgba(9, 9, 11, 0.82) 38%, rgba(9, 9, 11, 0.24) 74%, rgba(9, 9, 11, 0.06) 100%),
+    linear-gradient(0deg, rgba(9, 9, 11, 0.97) 0%, rgba(9, 9, 11, 0.4) 34%, transparent 68%);
 }
 
 .billboard-body {
-  max-width: 540px;
-  padding: clamp(22px, 3.4vw, 38px);
+  max-width: 640px;
+  padding: clamp(24px, 4vw, 52px);
 }
 
+.billboard .eyebrow { color: #d4d4d8; font-weight: 600; }
+
 .billboard h1 {
-  margin: 0 0 10px;
-  font-size: clamp(30px, 4.2vw, 46px);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  margin: 0 0 14px;
+  max-width: 24ch;
+  font-size: clamp(36px, 5.4vw, 64px);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
   font-weight: 600;
+  text-wrap: balance;
 }
 
 .billboard-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   font-size: 12.5px;
-  color: var(--muted);
+  color: #c4c4cb;
 }
 .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--muted-2); }
 
 .billboard-copy {
-  margin: 0 0 20px;
-  max-width: 46ch;
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: #b4b4bb;
+  margin: 0 0 24px;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #c4c4cb;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .billboard-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -452,6 +475,35 @@ main { padding-top: 20px; }
   inset: 0;
   border-radius: inherit;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.card-poster {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 320ms var(--ease);
+}
+.card:hover .card-poster { transform: scale(1.025); }
+
+.card-rating {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: rgba(9, 9, 11, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fafafa;
 }
 
 .card-glyph {
@@ -547,6 +599,22 @@ main { padding-top: 20px; }
   opacity: 0.6;
 }
 
+.stage-media { position: absolute; inset: 0; }
+.stage-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+}
+
+.stage-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(90% 90% at 50% 38%, transparent 28%, rgba(6, 6, 8, 0.74) 100%),
+    linear-gradient(0deg, rgba(6, 6, 8, 0.9), transparent 58%);
+}
+
 .stage-empty {
   position: absolute;
   inset: 0;
@@ -638,6 +706,9 @@ main { padding-top: 20px; }
   padding-top: 22px;
 }
 
+.player-info.is-single { grid-template-columns: minmax(0, 1fr); }
+.player-info.is-single .player-copy { max-width: 780px; }
+
 .player-copy h1 {
   margin: 0 0 8px;
   font-size: clamp(24px, 3vw, 32px);
@@ -645,6 +716,10 @@ main { padding-top: 20px; }
   font-weight: 600;
 }
 .player-copy .meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin: 0 0 14px;
   font-size: 12.5px;
   color: var(--muted);
@@ -684,6 +759,15 @@ main { padding-top: 20px; }
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-height: 300px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.episode-count {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--muted);
 }
 
 .episode {
@@ -755,6 +839,50 @@ main { padding-top: 20px; }
 
 [hidden] { display: none !important; }
 
+/* Loading placeholders */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #1a1a1c;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.055) 50%, transparent 80%);
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { to { transform: translateX(100%); } }
+
+.card.is-skeleton { pointer-events: none; }
+.sk-line { display: block; height: 9px; border-radius: 4px; margin: 2px 0; }
+.sk-line.short { width: 55%; }
+
+.row-error {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.row-error p { margin: 0; }
+
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 @keyframes enter {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
@@ -786,4 +914,6 @@ main { padding-top: 20px; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
   .card:hover { transform: none; }
+  .card:hover .card-poster { transform: none; }
+  .skeleton::after { display: none; }
 }
