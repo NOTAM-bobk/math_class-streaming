@@ -51,6 +51,13 @@ export default function Header({
   watchlistCount = 0,
   watchlistActive = false,
   onWatchlist,
+  settings,
+  onUpdateSetting,
+  progressCount = 0,
+  onClearProgress,
+  installAvailable = false,
+  installed = false,
+  onInstall,
 }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -106,8 +113,8 @@ export default function Header({
   const handleShare = async () => {
     const url = window.location.href;
     const shareData = {
-      title: "math_games streaming",
-      text: "Watch 700+ movies & TV shows on math_games streaming",
+      title: "math_class:network",
+      text: "Watch movies & TV shows on math_class:network",
       url,
     };
     if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
@@ -141,10 +148,10 @@ export default function Header({
           href="/"
           className="nav-brand-pill"
           onClick={handleBrandClick}
-          aria-label="math_games streaming home"
-          title="math_games streaming"
+          aria-label="math_class:network home"
+          title="math_class:network"
         >
-          math_games
+          math_class:network
         </a>
 
         {/* Center: Search input with / shortcut */}
@@ -173,7 +180,7 @@ export default function Header({
                   onClear();
                 }
               }}
-              placeholder="Search 700+ titles"
+              placeholder="search infinite amount of titles"
               autoComplete="off"
               spellCheck={false}
               className="nav-search-input"
@@ -454,6 +461,13 @@ export default function Header({
         onFilter={onFilter}
         recentCount={recentCount}
         onClearRecent={onClearRecent}
+        settings={settings}
+        onUpdateSetting={onUpdateSetting}
+        progressCount={progressCount}
+        onClearProgress={onClearProgress}
+        installAvailable={installAvailable}
+        installed={installed}
+        onInstall={onInstall}
       />
     </header>
   );
