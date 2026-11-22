@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="math_games {SS}">
+  <defs>
+    <clipPath id="tile">
+      <rect width="512" height="512" rx="112"/>
+    </clipPath>
+    <linearGradient id="body" x1="0.05" y1="0" x2="0.45" y2="1">
+      <stop offset="0" stop-color="#3c3c43"/>
+      <stop offset="0.42" stop-color="#2b2b31"/>
+      <stop offset="1" stop-color="#17171a"/>
+    </linearGradient>
+    <radialGradient id="bodyLight" cx="0.32" cy="0.03" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.2"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0.1" y1="0" x2="0.55" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="0.4" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="0.72" stop-color="#000000" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.45"/>
+    </linearGradient>
+    <linearGradient id="innerShade" x1="0" y1="0.3" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.42"/>
+    </linearGradient>
+    <linearGradient id="edge" gradientUnits="userSpaceOnUse" x1="110" y1="140" x2="380" y2="386">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.42"/>
+    </linearGradient>
+    <linearGradient id="face" gradientUnits="userSpaceOnUse" x1="150" y1="150" x2="300" y2="380">
+      <stop offset="0" stop-color="#c8c8d4"/>
+      <stop offset="0.35" stop-color="#8f8f9c"/>
+      <stop offset="0.7" stop-color="#5e5e69"/>
+      <stop offset="1" stop-color="#414149"/>
+    </linearGradient>
+    <g id="braces" fill="none" stroke-linecap="square" stroke-linejoin="round">
+      <path d="M 113 163 L 100 163 Q 92 163 92 175 L 92 232 L 79 256 L 92 280 L 92 337 Q 92 349 100 349 L 113 349"/>
+      <path d="M 399 163 L 412 163 Q 420 163 420 175 L 420 232 L 433 256 L 420 280 L 420 337 Q 420 349 412 349 L 399 349"/>
+    </g>
+    <g id="esses" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 233 196 C 226 177 205 168 187 172 C 166 177 156 198 165 216 C 172 230 196 237 212 247 C 229 258 234 287 221 307 C 208 326 181 331 164 318"/>
+      <path d="M 357 196 C 350 177 329 168 311 172 C 290 177 280 198 289 216 C 296 230 320 237 336 247 C 353 258 358 287 345 307 C 332 326 305 331 288 318"/>
+    </g>
+  </defs>
+
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" rx="112" fill="#18181b"/>
+    <rect x="5" y="5" width="502" height="502" rx="107" fill="url(#body)"/>
+    <rect x="5" y="5" width="502" height="502" rx="107" fill="url(#bodyLight)"/>
+    <rect x="6.5" y="6.5" width="499" height="499" rx="105.5" fill="none" stroke="url(#rim)" stroke-width="3"/>
+    <rect x="22" y="22" width="468" height="468" rx="92" fill="none" stroke="url(#innerShade)" stroke-width="8"/>
+  </g>
+
+  <!-- Extruded side: the same glyphs pushed down, drawn wider and dark. -->
+  <g transform="translate(256 256) scale(1.055) translate(-256 -256)">
+  <g stroke="#050506" stroke-opacity="0.92">
+    <use href="#braces" xlink:href="#braces" stroke-width="30" transform="translate(0 5)"/>
+    <use href="#esses" xlink:href="#esses" stroke-width="35" transform="translate(0 5)"/>
+  </g>
+  <!-- Rim: a wider stroke left visible as a bevel edge around each letter. -->
+  <g>
+    <use href="#braces" xlink:href="#braces" stroke="url(#edge)" stroke-width="28"/>
+    <use href="#esses" xlink:href="#esses" stroke="url(#edge)" stroke-width="33"/>
+  </g>
+  <!-- Face -->
+  <g>
+    <use href="#braces" xlink:href="#braces" stroke="url(#face)" stroke-width="25"/>
+    <use href="#esses" xlink:href="#esses" stroke="url(#face)" stroke-width="30"/>
+  </g>
+  </g>
+</svg>
