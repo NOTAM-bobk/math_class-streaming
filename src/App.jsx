@@ -412,6 +412,7 @@ export default function App() {
           meta={player.meta}
           autoplay={player.autoplay}
           onBack={closePlayer}
+          onOpen={openPlayer}
           saved={saved(player.meta)}
           onToggleSave={toggleSave}
           settings={settings}
