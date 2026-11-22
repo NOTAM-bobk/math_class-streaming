@@ -1,4 +1,5 @@
-import { genresOf, hueOf, initials, yearOf } from "../lib/format.js";
+import { formatPosition, genresOf, hueOf, initials, yearOf } from "../lib/format.js";
+import { progressRatio } from "../lib/progress.js";
 import { BookmarkIcon, PlayIcon } from "./Icons.jsx";
 
 export default function Tile({
@@ -7,11 +8,16 @@ export default function Tile({
   metaText = "",
   saved = false,
   onToggleSave,
+  progress = null,
   rank,
 }) {
   const year = yearOf(meta);
   const genre = genresOf(meta)[0] || (meta.type === "series" ? "Series" : "Film");
   const label = `Play ${meta.name}${year ? ` (${year})` : ""}`;
+  const watched = progressRatio(progress);
+  const resumeLabel = progress?.position
+    ? ` · ${formatPosition(progress.position)} watched`
+    : "";
 
   return (
     <article className={`tile${rank ? " is-ranked" : ""}`}>
@@ -20,7 +26,7 @@ export default function Tile({
           type="button"
           className="tile-open"
           onClick={() => onOpen(meta, true)}
-          aria-label={label}
+          aria-label={`${label}${resumeLabel}`}
         >
           <span className="tile-initials" aria-hidden="true">
             {initials(meta.name)}
@@ -46,6 +52,15 @@ export default function Tile({
         {rank ? (
           <span className="tile-rank" aria-hidden="true">
             {rank}
+          </span>
+        ) : null}
+
+        {watched > 0.004 ? (
+          <span
+            className={`tile-progress${watched >= 0.96 ? " is-done" : ""}`}
+            aria-hidden="true"
+          >
+            <span style={{ width: `${Math.min(100, watched * 100)}%` }} />
           </span>
         ) : null}
 

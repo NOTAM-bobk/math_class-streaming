@@ -1,8 +1,53 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { catalog } from "../lib/catalog.js";
-import { episodeUrl, idOf, movieUrl, PLAYER_API } from "../lib/player.js";
+import { formatMinutes, formatPosition } from "../lib/format.js";
+import {
+  directUrl,
+  episodeUrl,
+  idOf,
+  movieUrl,
+  PLAYER_API,
+} from "../lib/player.js";
+import {
+  clearProgressEntry,
+  getProgress,
+  resumeSeconds,
+  saveProgress,
+} from "../lib/progress.js";
+import { themeHex } from "../lib/settings.js";
 import Facts from "./Facts.jsx";
-import { BookmarkIcon, ChevronLeft, PlayIcon } from "./Icons.jsx";
+import { BookmarkIcon, ChevronLeft, PlayIcon, RotateIcon } from "./Icons.jsx";
+
+function parseProgressMessage(raw) {
+  let payload = raw;
+  if (typeof raw === "string") {
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (!payload || typeof payload !== "object") return null;
+  const body =
+    payload.data && typeof payload.data === "object" ? payload.data : payload;
+  const position = Number(
+    body.currentTime ?? body.current_time ?? body.position ?? body.time
+  );
+  if (!Number.isFinite(position)) return null;
+  const duration = Number(body.duration);
+  return {
+    position: Math.max(0, position),
+    duration: Number.isFinite(duration) ? duration : 0,
+  };
+}
+
+function isPlayerOrigin(origin) {
+  if (!origin) return false;
+  if (origin === window.location.origin) return true;
+  return /^https:\/\/([a-z0-9-]+\.)?vidfast\.(vc|pro|net|io|in|me|pm|xyz)$/i.test(
+    origin
+  );
+}
 
 export default function PlayerView({
   meta,
@@ -10,24 +55,82 @@ export default function PlayerView({
   onBack,
   saved = false,
   onToggleSave,
+  settings,
+  onProgressSaved,
 }) {
+  const remember = settings?.rememberProgress !== false;
+  const proxy = settings?.proxyPlayer !== false;
+  const theme = themeHex(settings?.playerTheme);
+  const wantsAutoplay = autoplay && settings?.autoplay !== false;
+
   const [videos, setVideos] = useState([]);
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
   const [src, setSrc] = useState("");
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [resumeAt, setResumeAt] = useState(0);
+
+  const iframeRef = useRef(null);
+  const positionRef = useRef(0);
+  const durationRef = useRef(0);
+  const remoteRef = useRef(false);
+  const lastPersist = useRef(0);
+  const lastAppSync = useRef(0);
 
   const isSeries = meta?.type === "series";
   const id = idOf(meta);
   const metaId = meta?.id || meta?.imdb_id;
 
   useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
+  useEffect(() => {
+    durationRef.current = duration;
+  }, [duration]);
+
+  const persist = useCallback(
+    (value, total) => {
+      if (!remember || !meta?.id || !Number.isFinite(value) || value < 5) return;
+      saveProgress(meta, {
+        position: value,
+        duration: total || durationRef.current,
+        season: isSeries ? season : undefined,
+        episode: isSeries ? episode : undefined,
+      });
+      if (Date.now() - lastAppSync.current > 12000) {
+        lastAppSync.current = Date.now();
+        onProgressSaved?.();
+      }
+    },
+    [remember, meta, isSeries, season, episode, onProgressSaved]
+  );
+
+  const persistRef = useRef(persist);
+  useEffect(() => {
+    persistRef.current = persist;
+  }, [persist]);
+
+  useEffect(
+    () => () => {
+      const pos = positionRef.current;
+      if (pos > 5) persistRef.current?.(pos, durationRef.current);
+      onProgressSaved?.();
+    },
+    [onProgressSaved]
+  );
+
+  useEffect(() => {
     let alive = true;
-    setVideos([]);
-    setSrc("");
     setReady(false);
     setError("");
+    setVideos([]);
+    setPosition(0);
+    setDuration(0);
+    setResumeAt(0);
+    remoteRef.current = false;
 
     if (!id) {
       setError("This title has no playable id.");
@@ -35,10 +138,21 @@ export default function PlayerView({
     }
 
     if (!isSeries) {
-      setSrc(movieUrl(id, autoplay));
+      const start = remember ? resumeSeconds(getProgress(meta)) : 0;
+      setResumeAt(start);
+      setPosition(start);
+      setSrc(
+        movieUrl(id, {
+          autoplay: wantsAutoplay,
+          startAt: start,
+          theme,
+          proxy,
+        })
+      );
       return undefined;
     }
 
+    setSrc("");
     catalog
       .meta("series", metaId)
       .then(({ meta: full }) => {
@@ -57,11 +171,32 @@ export default function PlayerView({
           return;
         }
 
-        const first = list[0];
+        const mostRecent = list
+          .map((video) => ({
+            video,
+            entry: getProgress(meta, video.season, video.number),
+          }))
+          .filter((item) => item.entry?.updatedAt)
+          .sort((a, b) => b.entry.updatedAt - a.entry.updatedAt)[0];
+
+        const first = mostRecent?.video || list[0];
+        const start = remember
+          ? resumeSeconds(getProgress(meta, first.season, first.number))
+          : 0;
+
         setVideos(list);
         setSeason(first.season);
         setEpisode(first.number);
-        setSrc(episodeUrl(id, first.season, first.number, autoplay));
+        setResumeAt(start);
+        setPosition(start);
+        setSrc(
+          episodeUrl(id, first.season, first.number, {
+            autoplay: wantsAutoplay,
+            startAt: start,
+            theme,
+            proxy,
+          })
+        );
       })
       .catch(() => {
         if (alive) setError("Episodes could not be loaded.");
@@ -70,7 +205,60 @@ export default function PlayerView({
     return () => {
       alive = false;
     };
-  }, [autoplay, id, isSeries, metaId]);
+  }, [
+    id,
+    isSeries,
+    meta,
+    metaId,
+    proxy,
+    remember,
+    theme,
+    wantsAutoplay,
+  ]);
+
+  useEffect(() => {
+    const onMessage = (event) => {
+      const frame = iframeRef.current;
+      if (!isPlayerOrigin(event.origin)) return;
+      if (frame && event.source && event.source !== frame.contentWindow) return;
+      const sample = parseProgressMessage(event.data);
+      if (!sample) return;
+      remoteRef.current = true;
+      setPosition(sample.position);
+      if (sample.duration) setDuration(sample.duration);
+      if (remember && Date.now() - lastPersist.current > 5000) {
+        lastPersist.current = Date.now();
+        persist(sample.position, sample.duration || durationRef.current);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [persist, remember]);
+
+  useEffect(() => {
+    if (!remember || position < 5) return undefined;
+    const timer = window.setTimeout(
+      () => persist(position, duration),
+      1500
+    );
+    return () => window.clearTimeout(timer);
+  }, [position, duration, persist, remember]);
+
+  useEffect(() => {
+    if (!ready) return undefined;
+    const timer = window.setInterval(() => {
+      if (remoteRef.current) return;
+      if (document.visibilityState !== "visible") return;
+      setPosition((prev) => {
+        const next = prev + 5;
+        if (durationRef.current > 0 && next > durationRef.current) {
+          return durationRef.current;
+        }
+        return next;
+      });
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [ready]);
 
   const seasons = useMemo(
     () => [...new Set(videos.map((video) => video.season))].sort((a, b) => a - b),
@@ -86,9 +274,40 @@ export default function PlayerView({
   );
 
   const pickEpisode = (number) => {
+    const start = remember ? resumeSeconds(getProgress(meta, season, number)) : 0;
     setEpisode(number);
     setReady(false);
-    setSrc(episodeUrl(id, season, number, true));
+    setResumeAt(start);
+    setPosition(start);
+    setDuration(0);
+    remoteRef.current = false;
+    setSrc(
+      episodeUrl(id, season, number, {
+        autoplay: wantsAutoplay,
+        startAt: start,
+        theme,
+        proxy,
+      })
+    );
+  };
+
+  const startOver = () => {
+    clearProgressEntry(
+      meta,
+      isSeries ? season : undefined,
+      isSeries ? episode : undefined
+    );
+    setResumeAt(0);
+    setPosition(0);
+    setDuration(0);
+    setReady(false);
+    remoteRef.current = false;
+    setSrc(
+      isSeries
+        ? episodeUrl(id, season, episode, { autoplay: true, theme, proxy })
+        : movieUrl(id, { autoplay: true, theme, proxy })
+    );
+    onProgressSaved?.();
   };
 
   if (!meta) return null;
@@ -100,6 +319,9 @@ export default function PlayerView({
       : !src && isSeries
         ? "Loading episodes…"
         : "Loading player…";
+
+  const percent =
+    duration > 0 ? Math.min(100, Math.max(0, (position / duration) * 100)) : 0;
 
   return (
     <main id="main" className="player">
@@ -122,7 +344,7 @@ export default function PlayerView({
           ) : null}
           <a
             className="player-source"
-            href={src || PLAYER_API}
+            href={directUrl(src) || PLAYER_API}
             target="_blank"
             rel="noreferrer"
           >
@@ -131,8 +353,23 @@ export default function PlayerView({
         </div>
       </div>
 
+      {resumeAt > 45 ? (
+        <div className="player-resume" role="status">
+          <RotateIcon />
+          <span>Resumed at {formatPosition(resumeAt)}</span>
+          <button
+            type="button"
+            className="player-resume-reset"
+            onClick={startOver}
+          >
+            Start over
+          </button>
+        </div>
+      ) : null}
+
       <div className="stage">
         <iframe
+          ref={iframeRef}
           src={src || "about:blank"}
           title={`${meta.name} player${
             isSeries ? ` season ${season} episode ${episode}` : ""
@@ -152,9 +389,23 @@ export default function PlayerView({
         ) : null}
       </div>
 
+      {position > 0 ? (
+        <div className="player-meter">
+          <span className="player-meter-track" aria-hidden="true">
+            <span style={{ width: `${percent}%` }} />
+          </span>
+          <span className="player-meter-label">
+            {formatPosition(position)}
+            {duration > 0 ? ` of ${formatMinutes(duration / 60)}` : " watched"}
+          </span>
+        </div>
+      ) : null}
+
       <p className="player-note">
-        Playback is embedded from VidFast. If it stays blank, open it in a new
-        tab.
+        {proxy
+          ? "Playback is proxied through math_class:network so it still loads on restricted networks."
+          : "Playback is embedded directly from VidFast."}{" "}
+        If it stays blank, open it in VidFast.
       </p>
 
       <div
