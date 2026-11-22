@@ -26,6 +26,9 @@ export default function Shelf({
   action,
   metaText,
   onRetry,
+  isSaved,
+  onToggleSave,
+  index = 0,
 }) {
   const [remote, setRemote] = useState({
     status: def ? "loading" : "ready",
@@ -99,7 +102,11 @@ export default function Shelf({
   };
 
   return (
-    <section className="row" data-type={def?.type || "mixed"}>
+    <section
+      className="row"
+      data-type={def?.type || "mixed"}
+      style={{ "--i": index }}
+    >
       <div className="shelf-head">
         <div className="shelf-heading">
           <h2>{title}</h2>
@@ -154,12 +161,14 @@ export default function Shelf({
         ) : null}
 
         {currentStatus === "ready"
-          ? list.map((meta, index) => (
+          ? list.map((meta, metaIndex) => (
               <Tile
-                key={`${meta.type}-${meta.id}-${index}`}
+                key={`${meta.type}-${meta.id}-${metaIndex}`}
                 meta={meta}
                 onOpen={onOpen}
                 metaText={metaText ? metaText(meta) : ""}
+                saved={Boolean(isSaved?.(meta))}
+                onToggleSave={onToggleSave}
               />
             ))
           : null}

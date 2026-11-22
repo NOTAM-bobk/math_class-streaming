@@ -10,6 +10,15 @@ async function request(path) {
   return response.json();
 }
 
+function scoreOf(meta) {
+  const rating = Number.parseFloat(meta?.imdbRating);
+  const year = Number.parseInt(
+    String(meta?.releaseInfo || meta?.year || "").match(/\d{4}/)?.[0] || "0",
+    10
+  );
+  return { rating: Number.isFinite(rating) ? rating : 0, year: Number.isFinite(year) ? year : 0 };
+}
+
 export const catalog = {
   meta(type, id) {
     if (!id) return Promise.reject(new Error("A title id is required"));
@@ -20,6 +29,35 @@ export const catalog = {
     let path = `/catalog/${type}/${kind}`;
     if (genre) path += `/genre=${encodeURIComponent(genre)}`;
     return request(`${path}.json`);
+  },
+
+  async trendingToday(limit = 10) {
+    const results = await Promise.allSettled([
+      request("/catalog/movie/top.json"),
+      request("/catalog/series/top.json"),
+    ]);
+    if (results.every((result) => result.status === "rejected")) {
+      throw new Error("Trending is unavailable");
+    }
+
+    const seen = new Set();
+    const metas = [];
+    for (const result of results) {
+      if (result.status !== "fulfilled") continue;
+      for (const meta of result.value?.metas || []) {
+        if (!meta?.id || !meta?.name) continue;
+        const key = `${meta.type || "movie"}-${meta.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        metas.push(meta);
+      }
+    }
+
+    return metas
+      .map((meta) => ({ meta, ...scoreOf(meta) }))
+      .sort((a, b) => b.rating - a.rating || b.year - a.year)
+      .slice(0, limit)
+      .map((entry) => entry.meta);
   },
 
   async search(query) {

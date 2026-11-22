@@ -110,6 +110,17 @@ export function ExternalLinkIcon() {
   );
 }
 
+export function BookmarkIcon({ filled = false }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M6.5 3h11a1 1 0 0 1 1 1v16.2a.6.6 0 0 1-.93.5L12 17.2l-5.57 3.5a.6.6 0 0 1-.93-.5V4a1 1 0 0 1 1-1z"
+        fill={filled ? "currentColor" : "none"}
+      />
+    </svg>
+  );
+}
+
 export function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
