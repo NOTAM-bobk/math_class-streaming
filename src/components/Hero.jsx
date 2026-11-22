@@ -1,12 +1,25 @@
 import Facts from "./Facts.jsx";
 import { PlayIcon } from "./Icons.jsx";
 
-export default function Hero({ meta, status, onPlay, onDetails }) {
+export default function Hero({
+  meta,
+  status,
+  onPlay,
+  onDetails,
+  onHoverChange,
+}) {
   const loading = status === "loading";
   const image = meta?.background || meta?.poster;
 
   return (
-    <section className="billboard" aria-labelledby="hero-title">
+    <section
+      className="billboard"
+      aria-labelledby="hero-title"
+      onMouseEnter={() => onHoverChange?.(true)}
+      onMouseLeave={() => onHoverChange?.(false)}
+      onFocus={() => onHoverChange?.(true)}
+      onBlur={() => onHoverChange?.(false)}
+    >
       <div className="billboard-media" aria-hidden="true">
         {image ? (
           <img

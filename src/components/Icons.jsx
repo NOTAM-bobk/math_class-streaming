@@ -31,10 +31,36 @@ export function ChevronRight() {
   );
 }
 
+export function ChevronDown() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
 export function PlayIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path d="M8 5.5v13l11-6.5z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function FilmIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="2.5" y="4.5" width="19" height="15" rx="2.5" />
+      <path d="M7 4.5v15M17 4.5v15M2.5 12h19M2.5 8h4.5M2.5 16h4.5M17 8h4.5M17 16h4.5" />
+    </svg>
+  );
+}
+
+export function GamepadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M7.5 8.5h9a4.5 4.5 0 0 1 4.4 3.6l.7 3.4a3 3 0 0 1-5.3 2.5l-.7-.9a2 2 0 0 0-1.6-.8h-4a2 2 0 0 0-1.6.8l-.7.9A3 3 0 0 1 2.4 15.5l.7-3.4a4.5 4.5 0 0 1 4.4-3.6z" />
+      <path d="M8 11.5v3M6.5 13h3M15.5 11.8h.01M17.6 13.9h.01" />
     </svg>
   );
 }
