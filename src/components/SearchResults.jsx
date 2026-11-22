@@ -7,6 +7,7 @@ export default function SearchResults({
   onRetry,
   isSaved,
   onToggleSave,
+  progressFor,
 }) {
   return (
     <main id="main" className="search-results view-enter">
@@ -19,6 +20,7 @@ export default function SearchResults({
         onRetry={onRetry}
         isSaved={isSaved}
         onToggleSave={onToggleSave}
+        progressFor={progressFor}
         emptyMessage={`No matches for “${search.query}”. Try a different title.`}
         action={
           <button type="button" className="row-clear" onClick={onClear}>
