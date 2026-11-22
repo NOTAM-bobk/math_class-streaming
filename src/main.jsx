@@ -5,6 +5,7 @@ import "./styles/base.css";
 import "./styles/player.css";
 import "./styles/panels.css";
 import "./styles/settings.css";
+import "./styles/editorial.css";
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
