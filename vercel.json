@@ -5,16 +5,14 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/script/:path*",
-      "destination": "/api/adcash/script/:path*"
-    },
-    {
       "source": "/embed/:path*",
-      "destination": "/api/embed/:path*"
+      "destination": "https://vidfast.vc/:path*"
     },
+    { "source": "/movie/:path*", "destination": "/index.html" },
+    { "source": "/series/:path*", "destination": "/index.html" },
     {
       "source": "/:path*",
-      "destination": "/index.html"
+      "destination": "https://vidfast.vc/:path*"
     }
   ],
   "headers": [
