@@ -31,6 +31,34 @@ export const catalog = {
     return request(`${path}.json`);
   },
 
+  // A shuffled mix of popular films and series for the rotating billboard.
+  async spotlight(limit = 6) {
+    const results = await Promise.allSettled([
+      request("/catalog/movie/top.json"),
+      request("/catalog/series/top.json"),
+    ]);
+    const pools = results
+      .filter((result) => result.status === "fulfilled")
+      .map((result) => result.value?.metas || []);
+    if (!pools.length) throw new Error("Spotlight is unavailable");
+
+    const picks = [];
+    const seen = new Set();
+    // Start past the headlines so the billboard is not the same as row one.
+    for (let offset = 6; offset < 48 && picks.length < limit; offset += 1) {
+      for (const pool of pools) {
+        const meta = pool[offset];
+        if (!meta?.id || !meta?.name) continue;
+        const key = `${meta.type || "movie"}-${meta.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        picks.push(meta);
+        if (picks.length >= limit) break;
+      }
+    }
+    return picks;
+  },
+
   async trendingToday(limit = 10) {
     const results = await Promise.allSettled([
       request("/catalog/movie/top.json"),
