@@ -11,6 +11,7 @@ import { catalog } from "./lib/catalog.js";
 import { GAMES_URL, HERO, ROWS } from "./lib/constants.js";
 import { relativeTime } from "./lib/format.js";
 import { readHistory, recordHistory, writeHistory } from "./lib/history.js";
+import { parseTitlePath, titlePath } from "./lib/routes.js";
 import {
   clearProgress as clearAllProgress,
   readProgress,
@@ -57,6 +58,13 @@ export default function App() {
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
+  const leaveTitle = useCallback(() => {
+    document.title = "math_class:network";
+    if (window.location.pathname !== "/") {
+      window.history.pushState(null, "", "/");
+    }
+  }, []);
+
   useEffect(() => {
     applySettings(settings);
     writeSettings(settings);
@@ -97,50 +105,64 @@ export default function App() {
     const onKeyDown = (event) => {
       if (event.key === "Escape" && player) {
         setPlayer(null);
+        leaveTitle();
         window.scrollTo(0, 0);
       }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [player]);
+  }, [player, leaveTitle]);
 
-  const openPlayer = useCallback(
-    (meta, autoplay = true) => {
-      if (!meta) return;
-      setRecent(recordHistory(meta));
-      setPlayer({ meta, autoplay: Boolean(autoplay) && settings.autoplay });
-      window.scrollTo(0, 0);
-    },
-    [settings.autoplay]
-  );
+  const autoplayRef = useRef(settings.autoplay);
+  useEffect(() => {
+    autoplayRef.current = settings.autoplay;
+  }, [settings.autoplay]);
+
+  const openPlayer = useCallback((meta, autoplay = true) => {
+    if (!meta) return;
+    setRecent(recordHistory(meta));
+    setPlayer({ meta, autoplay: Boolean(autoplay) && autoplayRef.current });
+    setSearch(null);
+    setView("browse");
+    setInput("");
+    const path = titlePath(meta);
+    if (window.location.pathname !== path) {
+      window.history.pushState({ title: meta.id }, "", path);
+    }
+    document.title = `${meta.name} — math_class:network`;
+    window.scrollTo(0, 0);
+  }, []);
 
   const closePlayer = useCallback(() => {
     setPlayer(null);
+    leaveTitle();
     window.scrollTo(0, 0);
-  }, []);
+  }, [leaveTitle]);
 
   const clearSearch = useCallback(() => {
     searchToken.current += 1;
     setSearch(null);
     setInput("");
-    window.history.replaceState(null, "", window.location.pathname);
+    window.history.replaceState(null, "", "/");
     window.scrollTo(0, 0);
   }, []);
 
   const goHome = useCallback(() => {
     setPlayer(null);
+    leaveTitle();
     setView("browse");
     clearSearch();
     setFilter("all");
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [clearSearch]);
+  }, [clearSearch, leaveTitle]);
 
   const showWatchlist = useCallback(() => {
     setPlayer(null);
+    leaveTitle();
     setView("watchlist");
     clearSearch();
     window.scrollTo(0, 0);
-  }, [clearSearch]);
+  }, [clearSearch, leaveTitle]);
 
   const browse = useCallback(() => {
     setView("browse");
@@ -292,12 +314,40 @@ export default function App() {
     }
   }, [openPlayer]);
 
+  const applyLocation = useCallback(async () => {
+    const parsed = parseTitlePath(window.location.pathname);
+    if (!parsed) {
+      setPlayer(null);
+      document.title = "math_class:network";
+      const query = new URLSearchParams(window.location.search).get("q");
+      if (query) submitSearch(query);
+      else setSearch(null);
+      return;
+    }
+
+    setSearch(null);
+    setView("browse");
+    setInput("");
+    try {
+      const meta = (await catalog.meta(parsed.type, parsed.id)).meta;
+      if (!meta?.id) throw new Error("Missing title");
+      setRecent(recordHistory(meta));
+      setPlayer({ meta, autoplay: autoplayRef.current });
+      document.title = `${meta.name} — math_class:network`;
+    } catch {
+      window.history.replaceState(null, "", "/");
+      setPlayer(null);
+      document.title = "math_class:network";
+      notify("That link does not match a title");
+    }
+  }, [notify, submitSearch]);
+
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search).get("q");
-    if (query) submitSearch(query);
-    // Deep-link search runs once on first paint.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    applyLocation();
+    const onPopState = () => applyLocation();
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [applyLocation]);
 
   const changeFilter = (next) => {
     if (search) clearSearch();
