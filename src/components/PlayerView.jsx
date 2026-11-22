@@ -16,7 +16,14 @@ import {
 } from "../lib/progress.js";
 import { themeHex } from "../lib/settings.js";
 import Facts from "./Facts.jsx";
-import { BookmarkIcon, ChevronLeft, PlayIcon, RotateIcon } from "./Icons.jsx";
+import { titlePath } from "../lib/routes.js";
+import {
+  BookmarkIcon,
+  ChevronLeft,
+  PlayIcon,
+  RotateIcon,
+  ShareIcon,
+} from "./Icons.jsx";
 
 function parseProgressMessage(raw) {
   let payload = raw;
@@ -72,6 +79,7 @@ export default function PlayerView({
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [resumeAt, setResumeAt] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   const iframeRef = useRef(null);
   const positionRef = useRef(0);
@@ -310,6 +318,18 @@ export default function PlayerView({
     onProgressSaved?.();
   };
 
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        new URL(titlePath(meta), window.location.origin).toString()
+      );
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   if (!meta) return null;
 
   const status = error
@@ -342,6 +362,14 @@ export default function PlayerView({
               {saved ? "In My List" : "My List"}
             </button>
           ) : null}
+          <button
+            type="button"
+            className={`player-link${copied ? " is-copied" : ""}`}
+            onClick={copyLink}
+          >
+            <ShareIcon />
+            {copied ? "Link copied" : "Copy link"}
+          </button>
           <a
             className="player-source"
             href={directUrl(src) || PLAYER_API}
@@ -350,6 +378,9 @@ export default function PlayerView({
           >
             Open in VidFast
           </a>
+          <span className="sr-only" role="status">
+            {copied ? "Title link copied" : ""}
+          </span>
         </div>
       </div>
 
