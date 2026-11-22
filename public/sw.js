@@ -100,18 +100,24 @@ async function handleNavigation(request) {
   }
 }
 
-// Only the app shell and its own files are cached here. Everything else on this
-// origin is the player reverse proxy and must go straight to the network.
-const APP_PATH =
-  /^\/(?:$|index\.html$|offline\.html$|manifest\.webmanifest$|app-icon\.svg$|(?:movie|series)\/[a-z0-9-]+-(?:tt)?\d+\/?$)/i;
-
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
 
+  // Never intercept the player or ad proxy, or unrelated protocols.
   if (!url.protocol.startsWith("http")) return;
+  if (
+    url.origin === self.location.origin &&
+    (url.pathname.startsWith("/embed") || url.pathname.startsWith("/api/"))
+  )
+    return;
+
+  if (request.mode === "navigate" && url.origin === self.location.origin) {
+    event.respondWith(handleNavigation(request));
+    return;
+  }
 
   if (url.origin === self.location.origin) {
     if (
@@ -122,14 +128,7 @@ self.addEventListener("fetch", (event) => {
       event.respondWith(cacheFirst(request));
       return;
     }
-    if (APP_PATH.test(url.pathname)) {
-      event.respondWith(
-        request.mode === "navigate"
-          ? handleNavigation(request)
-          : staleWhileRevalidate(request)
-      );
-    }
-    // Left alone: /embed/*, /_next/*, /api/* and the player's own root paths.
+    event.respondWith(staleWhileRevalidate(request));
     return;
   }
 

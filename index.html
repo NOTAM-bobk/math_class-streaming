@@ -2,13 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Route the Adcash library's own requests (format scripts, zone config,
-         ad calls, beacons) through the same-origin proxy as well. -->
+    <!-- Adcash Autotag. The library is loaded through our /api/adcash proxy, and
+         only when that proxy really serves it do we route the library's own
+         requests (format scripts, zone config, ad calls, beacons) through it
+         too. A static deploy without serverless functions keeps talking to the
+         Adcash hosts directly. -->
     <script>
       (function () {
         var AD_HOSTS =
           /(^|\.)(acscdn\.com|adcash\.com|rapidadexchange\.com|usrpubtrck\.com)$/i;
-        var PROXY = "/api/adcash/";
+        var shimInstalled = false;
+        var started = false;
+        var usedFallback = false;
+
         function rewrite(url) {
           try {
             var parsed = new URL(url, window.location.href);
@@ -18,13 +24,17 @@
                 : url;
             }
             if (!AD_HOSTS.test(parsed.hostname)) return url;
-            return PROXY + parsed.hostname + parsed.pathname + parsed.search;
+            return (
+              "/api/adcash/" + parsed.hostname + parsed.pathname + parsed.search
+            );
           } catch (error) {
             return url;
           }
         }
+
         function patchSrc(proto) {
-          var descriptor = proto && Object.getOwnPropertyDescriptor(proto, "src");
+          var descriptor =
+            proto && Object.getOwnPropertyDescriptor(proto, "src");
           if (!descriptor || !descriptor.set) return;
           Object.defineProperty(proto, "src", {
             configurable: true,
@@ -35,74 +45,85 @@
             },
           });
         }
-        patchSrc(window.HTMLScriptElement && HTMLScriptElement.prototype);
-        patchSrc(window.HTMLImageElement && HTMLImageElement.prototype);
-        patchSrc(window.HTMLIFrameElement && HTMLIFrameElement.prototype);
 
-        var setAttribute = Element.prototype.setAttribute;
-        Element.prototype.setAttribute = function (name, value) {
-          if (typeof value === "string" && /^(src|href)$/i.test(name)) {
-            return setAttribute.call(this, name, rewrite(value));
+        function installShim() {
+          if (shimInstalled) return;
+          shimInstalled = true;
+
+          patchSrc(window.HTMLScriptElement && HTMLScriptElement.prototype);
+          patchSrc(window.HTMLImageElement && HTMLImageElement.prototype);
+          patchSrc(window.HTMLIFrameElement && HTMLIFrameElement.prototype);
+
+          var setAttribute = Element.prototype.setAttribute;
+          Element.prototype.setAttribute = function (name, value) {
+            if (typeof value === "string" && /^(src|href)$/i.test(name)) {
+              return setAttribute.call(this, name, rewrite(value));
+            }
+            return setAttribute.call(this, name, value);
+          };
+
+          if (window.fetch) {
+            var nativeFetch = window.fetch;
+            window.fetch = function (input, init) {
+              return typeof input === "string"
+                ? nativeFetch.call(this, rewrite(input), init)
+                : nativeFetch.call(this, input, init);
+            };
           }
-          return setAttribute.call(this, name, value);
-        };
 
-        if (window.fetch) {
-          var nativeFetch = window.fetch;
-          window.fetch = function (input, init) {
-            return typeof input === "string"
-              ? nativeFetch.call(this, rewrite(input), init)
-              : nativeFetch.call(this, input, init);
-          };
+          if (window.XMLHttpRequest) {
+            var open = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function (method, url) {
+              arguments[1] = rewrite(url);
+              return open.apply(this, arguments);
+            };
+          }
+
+          if (navigator.sendBeacon) {
+            var beacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function (url, data) {
+              return beacon(rewrite(url), data);
+            };
+          }
         }
 
-        if (window.XMLHttpRequest) {
-          var open = XMLHttpRequest.prototype.open;
-          XMLHttpRequest.prototype.open = function (method, url) {
-            arguments[1] = rewrite(url);
-            return open.apply(this, arguments);
-          };
-        }
-
-        if (navigator.sendBeacon) {
-          var beacon = navigator.sendBeacon.bind(navigator);
-          navigator.sendBeacon = function (url, data) {
-            return beacon(rewrite(url), data);
-          };
-        }
-      })();
-    </script>
-
-    <!-- Adcash Autotag, loaded through our Vercel proxy so a blocked adcash CDN
-         does not stop it; falls back to the CDN when the proxy is unavailable. -->
-    <script>
-      (function () {
-        var started = false;
-        var fellBack = false;
         function runAutoTag() {
           if (started || !window.aclib) return;
           started = true;
           window.aclib.runAutoTag({ zoneId: "pk5bgzzsjw" });
         }
+
         function loadDirect() {
-          if (fellBack) return;
-          fellBack = true;
-          load("https://acscdn.com/script/aclib.js", true);
+          if (usedFallback) return;
+          usedFallback = true;
+          addScript("https://acscdn.com/script/aclib.js", runAutoTag);
         }
-        function load(src, isFallback) {
+
+        function addScript(src, onload, onerror) {
           var script = document.createElement("script");
           script.id = "aclib";
           script.type = "text/javascript";
           script.async = true;
           script.src = src;
-          script.onload = function () {
-            if (window.aclib) runAutoTag();
-            else if (!isFallback) loadDirect();
-          };
-          if (!isFallback) script.onerror = loadDirect;
+          script.onload = onload;
+          if (onerror) script.onerror = onerror;
           document.head.appendChild(script);
         }
-        load("/api/adcash/script/aclib.js");
+
+        // The proxy is only worth using if it actually returns the library;
+        // otherwise Adcash is loaded (and left) on its own hosts.
+        addScript(
+          "/api/adcash/script/aclib.js",
+          function () {
+            if (!window.aclib) {
+              loadDirect();
+              return;
+            }
+            installShim();
+            runAutoTag();
+          },
+          loadDirect
+        );
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
