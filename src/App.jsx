@@ -33,7 +33,9 @@ export default function App() {
   const [input, setInput] = useState("");
   const [search, setSearch] = useState(null);
   const [player, setPlayer] = useState(null);
-  const [hero, setHero] = useState({ status: "loading", meta: null });
+  const [heroes, setHeroes] = useState([]);
+  const [heroStatus, setHeroStatus] = useState("loading");
+  const [heroIndex, setHeroIndex] = useState(0);
   const [recent, setRecent] = useState(readHistory);
   const [watchlist, setWatchlist] = useState(readWatchlist);
   const [progress, setProgress] = useState(readProgress);
@@ -88,18 +90,44 @@ export default function App() {
 
   useEffect(() => {
     let alive = true;
-    catalog
-      .meta(HERO.type, HERO.id)
-      .then(({ meta }) => {
-        if (alive) setHero({ status: "ready", meta });
-      })
-      .catch(() => {
-        if (alive) setHero({ status: "error", meta: null });
-      });
+    const load = async () => {
+      try {
+        const { meta } = await catalog.meta(HERO.type, HERO.id);
+        if (!alive) return;
+        if (meta?.id) {
+          setHeroes([meta]);
+          setHeroStatus("ready");
+        }
+      } catch {
+        if (alive) setHeroStatus("error");
+      }
+
+      try {
+        const more = await catalog.spotlight(6);
+        if (!alive || !more.length) return;
+        setHeroes((prev) => {
+          const seen = new Set(prev.map((item) => item.id));
+          return [...prev, ...more.filter((item) => !seen.has(item.id))];
+        });
+        setHeroStatus("ready");
+      } catch {
+        // The single featured title still shows.
+      }
+    };
+    load();
     return () => {
       alive = false;
     };
   }, []);
+
+  // Rotate the billboard through the featured films and series.
+  useEffect(() => {
+    if (heroes.length < 2) return undefined;
+    const timer = window.setInterval(() => {
+      setHeroIndex((index) => (index + 1) % heroes.length);
+    }, 9000);
+    return () => window.clearInterval(timer);
+  }, [heroes.length]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -341,6 +369,11 @@ export default function App() {
   const visibleRows =
     filter === "all" ? ROWS : ROWS.filter((row) => row.type === filter);
 
+  const hero = {
+    status: heroes.length ? "ready" : heroStatus,
+    meta: heroes.length ? heroes[heroIndex % heroes.length] : null,
+  };
+
   return (
     <>
       <a className="skip-link" href="#main">
@@ -385,15 +418,12 @@ export default function App() {
           onOpen={openPlayer}
           onClear={clearSearch}
           onRetry={() => submitSearch(search.query)}
-          isSaved={saved}
-          onToggleSave={toggleSave}
           progressFor={progressFor}
         />
       ) : view === "watchlist" ? (
         <WatchlistView
           items={watchlist}
           onOpen={openPlayer}
-          onToggleSave={toggleSave}
           onBrowse={browse}
           progressFor={progressFor}
         />
@@ -402,18 +432,14 @@ export default function App() {
           <Hero
             meta={hero.meta}
             status={hero.status}
-            saved={saved(hero.meta)}
             onPlay={(meta) => openPlayer(meta, true)}
             onDetails={(meta) => openPlayer(meta, false)}
-            onToggleSave={toggleSave}
           />
           <div className="rows">
             {filter === "all" ? (
               <TopTen
                 index={0}
                 onOpen={openPlayer}
-                isSaved={saved}
-                onToggleSave={toggleSave}
                 progressFor={progressFor}
               />
             ) : null}
@@ -423,8 +449,6 @@ export default function App() {
                 title="Recently watched"
                 items={recent}
                 onOpen={openPlayer}
-                isSaved={saved}
-                onToggleSave={toggleSave}
                 progressFor={progressFor}
                 index={1}
                 metaText={(item) => `Watched ${relativeTime(item.watchedAt)}`}
@@ -447,8 +471,6 @@ export default function App() {
                 note={row.note}
                 def={row}
                 onOpen={openPlayer}
-                isSaved={saved}
-                onToggleSave={toggleSave}
                 progressFor={progressFor}
                 index={index + (filter === "all" ? 2 : 1)}
               />
