@@ -305,6 +305,12 @@ export default function App() {
     setFilter(next);
   };
 
+  const clearRecent = () => {
+    if (!window.confirm("Clear your recently watched list?")) return;
+    writeHistory([]);
+    setRecent([]);
+  };
+
   const visibleRows =
     filter === "all" ? ROWS : ROWS.filter((row) => row.type === filter);
 
