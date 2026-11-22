@@ -1,41 +1,14 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { GAMES_URL } from "../lib/constants.js";
+import { useState, useRef, useEffect } from "react";
 import {
   SearchIcon,
   XIcon,
-  BellIcon,
   ShareIcon,
   SettingsIcon,
   ShieldAlertIcon,
-  MoreHorizontalIcon,
-  ShuffleIcon,
-  ExternalLinkIcon,
-  CheckIcon,
   BookmarkIcon,
 } from "./Icons.jsx";
 import { triggerPanic, usePanicShortcut } from "./PanicButton.jsx";
 import SettingsModal from "./SettingsModal.jsx";
-
-const NOTIFICATIONS = [
-  {
-    id: "catalog",
-    title: "700+ Titles Available",
-    desc: "Stream full movies and series with fast playback and zero sign-in required.",
-    tag: "Library",
-  },
-  {
-    id: "shortcuts",
-    title: "Keyboard Shortcuts",
-    desc: "Press [/] to search anytime, []] for instant panic exit, and [Esc] to exit player.",
-    tag: "Tips",
-  },
-  {
-    id: "vidfast",
-    title: "Fast Embedded Player",
-    desc: "Multi-season and episode navigation powered by Cinemeta & VidFast.",
-    tag: "Player",
-  },
-];
 
 export default function Header({
   filter = "all",
@@ -44,7 +17,6 @@ export default function Header({
   onQueryChange,
   onSubmit,
   onClear,
-  onRandom,
   onHome,
   recentCount = 0,
   onClearRecent,
@@ -59,14 +31,10 @@ export default function Header({
   installed = false,
   onInstall,
 }) {
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [hasUnread, setHasUnread] = useState(true);
   const [toast, setToast] = useState(null);
 
   const searchRef = useRef(null);
-  const headerRef = useRef(null);
 
   // Global panic shortcut ']'
   usePanicShortcut();
@@ -89,18 +57,6 @@ export default function Header({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // Click outside listener for dropdowns
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (headerRef.current && !headerRef.current.contains(event.target)) {
-        setNotificationsOpen(false);
-        setMoreOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleBrandClick = (e) => {
@@ -141,7 +97,7 @@ export default function Header({
   };
 
   return (
-    <header className="nav-wrapper" ref={headerRef}>
+    <header className="nav-wrapper">
       <div className="solid-3d-panel">
         {/* Left: Brand pill */}
         <a
@@ -224,51 +180,6 @@ export default function Header({
             ) : null}
           </button>
 
-          {/* Notifications Button */}
-          <div className="nav-action-wrapper">
-            <button
-              type="button"
-              className="nav-icon-btn"
-              title="Notifications & Updates"
-              aria-label="Notifications"
-              aria-expanded={notificationsOpen}
-              onClick={() => {
-                setNotificationsOpen((prev) => !prev);
-                setMoreOpen(false);
-                setHasUnread(false);
-              }}
-            >
-              <BellIcon />
-              {hasUnread && <span className="nav-indicator-dot" />}
-            </button>
-
-            {notificationsOpen && (
-              <div
-                className="nav-dropdown nav-notifications-dropdown"
-                role="region"
-                aria-label="Notifications"
-              >
-                <div className="nav-dropdown-head">
-                  <span className="nav-dropdown-title">Updates & Tips</span>
-                  <span className="nav-badge">News</span>
-                </div>
-                <div className="nav-notifications-list">
-                  {NOTIFICATIONS.map((item) => (
-                    <div key={item.id} className="nav-notification-card">
-                      <div className="nav-notification-top">
-                        <strong className="nav-notification-title">
-                          {item.title}
-                        </strong>
-                        <span className="nav-notification-tag">{item.tag}</span>
-                      </div>
-                      <p className="nav-notification-desc">{item.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Share Button */}
           <button
             type="button"
@@ -287,11 +198,7 @@ export default function Header({
             title="Settings & Panic Controls"
             aria-label="Settings"
             aria-expanded={settingsOpen}
-            onClick={() => {
-              setSettingsOpen(true);
-              setNotificationsOpen(false);
-              setMoreOpen(false);
-            }}
+            onClick={() => setSettingsOpen(true)}
           >
             <SettingsIcon />
           </button>
@@ -307,142 +214,6 @@ export default function Header({
           >
             <ShieldAlertIcon />
           </button>
-
-          {/* More Actions Button */}
-          <div className="nav-action-wrapper">
-            <button
-              type="button"
-              className="nav-icon-btn"
-              title="More actions"
-              aria-label="More actions"
-              aria-expanded={moreOpen}
-              onClick={() => {
-                setMoreOpen((prev) => !prev);
-                setNotificationsOpen(false);
-              }}
-            >
-              <MoreHorizontalIcon />
-            </button>
-
-            {moreOpen && (
-              <div
-                className="nav-dropdown nav-more-dropdown"
-                role="menu"
-                aria-label="More actions"
-              >
-                {onRandom && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="nav-menu-item"
-                    onClick={() => {
-                      setMoreOpen(false);
-                      onRandom();
-                    }}
-                  >
-                    <ShuffleIcon />
-                    <span>Random title</span>
-                  </button>
-                )}
-
-                {onWatchlist && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="nav-menu-item"
-                    onClick={() => {
-                      setMoreOpen(false);
-                      onWatchlist();
-                    }}
-                  >
-                    <BookmarkIcon filled={watchlistActive} />
-                    <span>My List ({watchlistCount})</span>
-                  </button>
-                )}
-
-                {onFilter && (
-                  <>
-                    <div className="nav-menu-divider" />
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="nav-menu-item"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        onFilter("all");
-                      }}
-                    >
-                      <span>Filter: All Titles</span>
-                      {filter === "all" && <CheckIcon />}
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="nav-menu-item"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        onFilter("movie");
-                      }}
-                    >
-                      <span>Filter: Movies</span>
-                      {filter === "movie" && <CheckIcon />}
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="nav-menu-item"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        onFilter("series");
-                      }}
-                    >
-                      <span>Filter: TV Shows</span>
-                      {filter === "series" && <CheckIcon />}
-                    </button>
-                    <div className="nav-menu-divider" />
-                  </>
-                )}
-
-                <a
-                  href={GAMES_URL}
-                  className="nav-menu-item"
-                  target="_blank"
-                  rel="noreferrer"
-                  role="menuitem"
-                >
-                  <ExternalLinkIcon />
-                  <span>Back to math_games</span>
-                </a>
-
-                {recentCount > 0 && onClearRecent && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="nav-menu-item"
-                    onClick={() => {
-                      setMoreOpen(false);
-                      onClearRecent();
-                    }}
-                  >
-                    <span>Clear watch history</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="nav-menu-item"
-                  onClick={() => {
-                    setMoreOpen(false);
-                    setSettingsOpen(true);
-                  }}
-                >
-                  <SettingsIcon />
-                  <span>Settings</span>
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
