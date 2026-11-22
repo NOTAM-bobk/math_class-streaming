@@ -36,6 +36,7 @@ export default function App() {
   const [heroes, setHeroes] = useState([]);
   const [heroStatus, setHeroStatus] = useState("loading");
   const [heroIndex, setHeroIndex] = useState(0);
+  const [heroPaused, setHeroPaused] = useState(false);
   const [recent, setRecent] = useState(readHistory);
   const [watchlist, setWatchlist] = useState(readWatchlist);
   const [progress, setProgress] = useState(readProgress);
@@ -120,14 +121,18 @@ export default function App() {
     };
   }, []);
 
-  // Rotate the billboard through the featured films and series.
+  // Rotate the billboard through the featured films and series, unless the
+  // visitor is reading it or has asked their system for less motion.
   useEffect(() => {
-    if (heroes.length < 2) return undefined;
+    if (heroes.length < 2 || heroPaused) return undefined;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+      return undefined;
+    }
     const timer = window.setInterval(() => {
       setHeroIndex((index) => (index + 1) % heroes.length);
     }, 9000);
     return () => window.clearInterval(timer);
-  }, [heroes.length]);
+  }, [heroes.length, heroPaused]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -430,10 +435,12 @@ export default function App() {
       ) : (
         <main id="main" className="view-enter">
           <Hero
+            key={hero.meta?.id || "hero"}
             meta={hero.meta}
             status={hero.status}
             onPlay={(meta) => openPlayer(meta, true)}
             onDetails={(meta) => openPlayer(meta, false)}
+            onHoverChange={setHeroPaused}
           />
           <div className="rows">
             {filter === "all" ? (
