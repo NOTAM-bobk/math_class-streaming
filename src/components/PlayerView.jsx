@@ -48,6 +48,23 @@ function parseProgressMessage(raw) {
   };
 }
 
+// A static deploy has no "/embed" proxy, so that path resolves to the app shell
+// instead of the player. Same-origin frames are readable, so detect the shell and
+// play from VidFast directly in that case.
+function isAppShell(frame) {
+  try {
+    const doc = frame.contentDocument;
+    if (!doc) return false;
+    return Boolean(
+      doc.querySelector(
+        'meta[name="application-name"][content="math_class:network"]'
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
 function isPlayerOrigin(origin) {
   if (!origin) return false;
   if (origin === window.location.origin) return true;
@@ -409,7 +426,17 @@ export default function PlayerView({
           allowFullScreen
           referrerPolicy="origin"
           onLoad={(event) => {
-            if (!event.currentTarget.src.includes("about:blank")) setReady(true);
+            const frame = event.currentTarget;
+            const loaded = frame.getAttribute("src") || "";
+            if (!loaded || loaded.includes("about:blank")) return;
+            if (isAppShell(frame)) {
+              const direct = directUrl(loaded);
+              if (direct && direct !== loaded) {
+                setSrc(direct);
+                return;
+              }
+            }
+            setReady(true);
           }}
         />
         {status ? (
@@ -433,7 +460,7 @@ export default function PlayerView({
       ) : null}
 
       <p className="player-note">
-        {proxy
+        {src.startsWith("/embed")
           ? "Playback is proxied through math_class:network so it still loads on restricted networks."
           : "Playback is embedded directly from VidFast."}{" "}
         If it stays blank, open it in VidFast.
