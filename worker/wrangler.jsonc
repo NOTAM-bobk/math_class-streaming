@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "adcash-proxy",
+  "main": "adcash.js",
+  "compatibility_date": "2026-11-01",
+  "routes": [
+    {
+      "pattern": "watch.benlaunches.icu/api/adcash/*",
+      "zone_name": "benlaunches.icu"
+    }
+  ]
+}
