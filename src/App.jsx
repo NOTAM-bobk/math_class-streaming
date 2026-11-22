@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Header from "./components/Header.jsx";
 import Hero from "./components/Hero.jsx";
-import PanicButton from "./components/PanicButton.jsx";
 import PlayerView from "./components/PlayerView.jsx";
 import SearchResults from "./components/SearchResults.jsx";
 import Shelf from "./components/Shelf.jsx";
@@ -65,6 +64,13 @@ export default function App() {
     window.scrollTo(0, 0);
   }, []);
 
+  const goHome = useCallback(() => {
+    setPlayer(null);
+    clearSearch();
+    setFilter("all");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [clearSearch]);
+
   const submitSearch = useCallback(
     async (raw) => {
       const query = String(raw || "").trim();
@@ -112,6 +118,29 @@ export default function App() {
     [clearSearch]
   );
 
+  const playRandom = useCallback(async () => {
+    try {
+      const topMovies = await catalog.browse({ type: "movie", catalog: "top" });
+      const metas = topMovies?.metas || [];
+      if (metas.length > 0) {
+        const pick = metas[Math.floor(Math.random() * metas.length)];
+        openPlayer(pick, true);
+        return;
+      }
+    } catch {}
+
+    const candidateRow = ROWS[Math.floor(Math.random() * ROWS.length)];
+    if (candidateRow) {
+      try {
+        const res = await catalog.browse(candidateRow);
+        const metas = res?.metas || [];
+        if (metas.length) {
+          openPlayer(metas[Math.floor(Math.random() * metas.length)], true);
+        }
+      } catch {}
+    }
+  }, [openPlayer]);
+
   useEffect(() => {
     const query = new URLSearchParams(window.location.search).get("q");
     if (query) submitSearch(query);
@@ -146,6 +175,10 @@ export default function App() {
         onQueryChange={setInput}
         onSubmit={submitSearch}
         onClear={clearSearch}
+        onRandom={playRandom}
+        onHome={goHome}
+        recentCount={recent.length}
+        onClearRecent={clearRecent}
       />
 
       {player ? (
@@ -210,8 +243,6 @@ export default function App() {
           Catalog from Cinemeta. Playback embedded from VidFast.
         </p>
       </footer>
-
-      <PanicButton />
     </>
   );
 }
