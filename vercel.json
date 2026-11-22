@@ -6,13 +6,11 @@
   "rewrites": [
     {
       "source": "/embed/:path*",
-      "destination": "https://vidfast.vc/:path*"
+      "destination": "/api/embed/:path*"
     },
-    { "source": "/movie/:path*", "destination": "/index.html" },
-    { "source": "/series/:path*", "destination": "/index.html" },
     {
       "source": "/:path*",
-      "destination": "https://vidfast.vc/:path*"
+      "destination": "/index.html"
     }
   ],
   "headers": [
