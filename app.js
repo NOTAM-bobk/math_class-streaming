@@ -1,149 +1,48 @@
-/* math_class streaming — skeleton bootstrap.
-   Catalog entries below are placeholders. Swap `catalog` for a real metadata
-   source and wire the stage in `openPlayer` to a video element when playback
-   lands. */
+/* math_class streaming — catalog bootstrap.
 
-const catalog = [
-  {
-    id: "last-theorem",
-    title: "The Last Theorem",
-    kind: "Film",
-    year: 2026,
-    runtime: "2h 08m",
-    rating: "PG-13",
-    hue: 236,
-    flag: "Film",
-    overview:
-      "A reclusive mathematician finds a proof that rewrites the rules of the game — and the people who want it buried.",
-    rows: ["trending", "movies"],
-  },
-  {
-    id: "night-shift",
-    title: "Night Shift",
-    kind: "Film",
-    year: 2025,
-    runtime: "1h 47m",
-    rating: "R",
-    hue: 262,
-    flag: "Film",
-    overview: "Two night guards keep a derelict arcade alive, one quarter at a time.",
-    rows: ["trending", "movies", "continue"],
-  },
-  {
-    id: "delta-9",
-    title: "Delta 9",
-    kind: "Film",
-    year: 2026,
-    runtime: "1h 58m",
-    rating: "PG-13",
-    hue: 200,
-    flag: "Film",
-    overview: "A routine supply run through the belt goes wrong in exactly one way.",
-    rows: ["trending", "movies"],
-  },
-  {
-    id: "chalkboard",
-    title: "Chalkboard",
-    kind: "Series",
-    year: 2025,
-    runtime: "3 seasons",
-    rating: "TV-14",
-    hue: 168,
-    flag: "Series",
-    overview: "A high school math department fights the district, the calculators and each other.",
-    rows: ["trending", "shows"],
-  },
-  {
-    id: "asymptote",
-    title: "Asymptote",
-    kind: "Series",
-    year: 2026,
-    runtime: "1 season",
-    rating: "TV-MA",
-    hue: 212,
-    flag: "New",
-    overview: "A curve that never touches the line — and the analyst who takes it personally.",
-    rows: ["trending", "shows"],
-  },
-  {
-    id: "blackboard-jungle",
-    title: "Blackboard Jungle",
-    kind: "Film",
-    year: 2024,
-    runtime: "2h 02m",
-    rating: "R",
-    hue: 24,
-    flag: "Film",
-    overview: "Summer school, one projector, and a stack of films the district forgot to ban.",
-    rows: ["movies"],
-  },
-  {
-    id: "null-set",
-    title: "Null Set",
-    kind: "Series",
-    year: 2025,
-    runtime: "2 seasons",
-    rating: "TV-14",
-    hue: 286,
-    flag: "Series",
-    overview: "A missing persons case with no elements at all.",
-    rows: ["shows"],
-  },
-  {
-    id: "quarterly",
-    title: "Quarterly",
-    kind: "Film",
-    year: 2023,
-    runtime: "1h 39m",
-    rating: "PG",
-    hue: 44,
-    flag: "Film",
-    overview: "Four friends, one budget, ninety minutes to spend it.",
-    rows: ["movies", "continue"],
-  },
-  {
-    id: "the-curve",
-    title: "The Curve",
-    kind: "Series",
-    year: 2026,
-    runtime: "1 season",
-    rating: "TV-MA",
-    hue: 320,
-    flag: "New",
-    overview: "Grading on a curve is easy until someone builds a better curve.",
-    rows: ["shows"],
-  },
-  {
-    id: "study-hall",
-    title: "Study Hall",
-    kind: "Film",
-    year: 2024,
-    runtime: "1h 52m",
-    rating: "PG-13",
-    hue: 96,
-    flag: "Film",
-    overview: "Forty minutes of silence, then whatever happens next.",
-    rows: ["continue"],
-  },
-];
+   Hero: pinned to one title by id (IMDb `tt…`). Cinemeta is keyed on IMDb ids, so
+   a TMDB id needs resolving first (e.g. TMDB /movie/{id}/external_ids) before it
+   can be swapped in here.
+   Rows: fetched by category from Cinemeta, the keyless Stremio metadata addon.
+   Playback remains a shell — nothing streams yet. */
 
-const rows = [
-  { id: "trending", title: "Trending now", note: "Updated hourly" },
-  { id: "movies", title: "Movies", note: "Feature length" },
-  { id: "shows", title: "TV shows", note: "Episodic" },
-  { id: "continue", title: "Continue watching", note: "Pick up where you left off" },
+const API = "https://v3-cinemeta.strem.io";
+const PAGE_SIZE = 12;
+
+/** Default hero title: Inception. Swap the id to feature something else. */
+const HERO = { type: "movie", id: "tt1375666" };
+
+/** Category rows. `genre` is either a genre or, for the `year` catalog, a year. */
+const ROWS = [
+  { key: "trending", title: "Trending now", note: "What everyone is watching", type: "movie", catalog: "top" },
+  { key: "new", title: "New releases", note: "2026 · feature films", type: "movie", catalog: "year", genre: "2026" },
+  { key: "shows", title: "TV shows", note: "Start a series tonight", type: "series", catalog: "top" },
+  { key: "scifi", title: "Sci-fi", note: "Genre · Sci-Fi", type: "movie", catalog: "top", genre: "Sci-Fi" },
 ];
 
 const rowsRoot = document.getElementById("rows");
 const browseView = document.getElementById("browse");
 const playerView = document.getElementById("player");
+const playerInfo = document.getElementById("player-info");
 const playerTitle = document.getElementById("player-title");
 const playerMeta = document.getElementById("player-meta");
 const playerKind = document.getElementById("player-kind");
 const playerOverview = document.getElementById("player-overview");
+const episodesAside = document.getElementById("episodes");
+const episodeList = document.getElementById("episode-list");
+const episodeCount = document.getElementById("episode-count");
+
+const esc = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+
+const yearOf = (meta) => meta.releaseInfo || meta.year || "";
+
+function genresOf(meta) {
+  return (meta.genres || meta.genre || []).slice(0, 3);
+}
 
 function initials(title) {
-  return title
+  return String(title || "?")
     .split(" ")
     .filter((word) => /[a-z0-9]/i.test(word))
     .slice(0, 2)
@@ -152,65 +51,265 @@ function initials(title) {
     .toUpperCase();
 }
 
-function makeCard(item) {
+function hueOf(meta) {
+  const seed = String(meta.id || meta.imdb_id || meta.name || "");
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) % 360;
+  return hash;
+}
+
+async function api(path) {
+  const response = await fetch(`${API}${path}`, { headers: { accept: "application/json" } });
+  if (!response.ok) throw new Error(`Cinemeta responded ${response.status}`);
+  return response.json();
+}
+
+function catalogPath(def) {
+  const extra = def.genre ? `/genre=${encodeURIComponent(def.genre)}` : "";
+  return `/catalog/${def.type}/${def.catalog}${extra}.json`;
+}
+
+/* -------------------------------------------------------------------------
+   Hero
+   ------------------------------------------------------------------------- */
+
+function heroMetaLine(meta) {
+  const parts = [yearOf(meta), meta.runtime, genresOf(meta).join(" / ")].filter(Boolean).map((part) => `<span>${esc(part)}</span>`);
+  const markup = parts.join('<span class="sep"></span>');
+  const rating = meta.imdbRating ? `<span class="badge">${esc(meta.imdbRating)} IMDb</span>` : "";
+  return `${markup}${rating}`;
+}
+
+function renderHero(meta) {
+  document.getElementById("billboard-title").textContent = meta.name || "Untitled";
+  document.getElementById("hero-kicker").textContent = meta.type === "series" ? "Featured series" : "Featured film";
+  document.getElementById("hero-meta").innerHTML = heroMetaLine(meta);
+  document.getElementById("hero-copy").textContent = meta.description || "";
+
+  const art = meta.background || meta.poster;
+  if (art) {
+    const image = new Image();
+    image.alt = "";
+    image.src = art;
+    image.fetchPriority = "high";
+    document.getElementById("hero-media").replaceChildren(image);
+  }
+
+  const play = document.getElementById("hero-play");
+  play.disabled = false;
+  play.onclick = () => openPlayer(meta);
+}
+
+function heroFailed() {
+  document.getElementById("billboard-title").textContent = "Catalog unavailable";
+  document.getElementById("hero-kicker").textContent = "Featured";
+  document.getElementById("hero-copy").textContent = "The metadata service could not be reached, so the featured title has no id to load.";
+  document.getElementById("hero-meta").innerHTML = "";
+  document.getElementById("hero-play").disabled = true;
+}
+
+async function loadHero() {
+  try {
+    const data = await api(`/meta/${HERO.type}/${HERO.id}.json`);
+    if (!data.meta) throw new Error("No meta in response");
+    renderHero({ ...data.meta, type: data.meta.type || HERO.type, id: data.meta.id || HERO.id });
+  } catch (error) {
+    console.error("Hero failed:", error);
+    heroFailed();
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Cards
+   ------------------------------------------------------------------------- */
+
+function makeCard(meta) {
   const card = document.createElement("button");
   card.type = "button";
   card.className = "card";
-  card.dataset.id = item.id;
-  card.setAttribute("aria-label", `Open ${item.title}`);
+  card.setAttribute("aria-label", `Open ${meta.name}${yearOf(meta) ? ` (${yearOf(meta)})` : ""}`);
+
+  const rating = meta.imdbRating ? `<span class="card-rating">${esc(meta.imdbRating)}</span>` : "";
+  const poster = meta.poster
+    ? `<img class="card-poster" src="${esc(meta.poster)}" alt="" loading="lazy" decoding="async">`
+    : "";
+
   card.innerHTML = `
-    <div class="card-art" style="--h:${item.hue}">
-      <span class="card-flag">${item.flag}</span>
-      <span class="card-glyph">${initials(item.title)}</span>
+    <div class="card-art" style="--h:${hueOf(meta)}">
+      <span class="card-glyph" aria-hidden="true">${esc(initials(meta.name))}</span>
+      ${poster}
+      ${rating}
     </div>
     <div class="card-body">
-      <p class="card-title">${item.title}</p>
-      <p class="card-meta">${item.year} &middot; ${item.runtime} &middot; ${item.rating}</p>
+      <p class="card-title">${esc(meta.name)}</p>
+      <p class="card-meta">${esc([yearOf(meta), meta.runtime].filter(Boolean).join(" · ") || (meta.type === "series" ? "Series" : "Film"))}</p>
     </div>
   `;
-  card.addEventListener("click", () => openPlayer(item));
+
+  card.querySelector("img")?.addEventListener("error", (event) => event.target.remove(), { once: true });
+  card.addEventListener("click", () => openPlayer(meta));
   return card;
 }
 
-function renderRows() {
-  const fragment = document.createDocumentFragment();
+/* -------------------------------------------------------------------------
+   Rows
+   ------------------------------------------------------------------------- */
 
-  rows.forEach((row) => {
-    const items = catalog.filter((item) => item.rows.includes(row.id));
-    if (!items.length) return;
-
-    const section = document.createElement("section");
-    section.className = "row";
-    section.setAttribute("aria-labelledby", `row-${row.id}`);
-
-    const head = document.createElement("div");
-    head.className = "row-head";
-    head.innerHTML = `<h2 id="row-${row.id}">${row.title}</h2><p>${row.note}</p>`;
-
-    const grid = document.createElement("div");
-    grid.className = "grid";
-    items.forEach((item) => grid.append(makeCard(item)));
-
-    section.append(head, grid);
-    fragment.append(section);
-  });
-
-  rowsRoot.append(fragment);
+function skeletonCards(count) {
+  return Array.from({ length: count }, () => `
+    <div class="card is-skeleton" aria-hidden="true">
+      <div class="card-art skeleton"></div>
+      <div class="card-body">
+        <span class="sk-line skeleton"></span>
+        <span class="sk-line skeleton short"></span>
+      </div>
+    </div>
+  `).join("");
 }
 
-function openPlayer(item) {
-  playerKind.textContent = item.kind;
-  playerTitle.textContent = item.title;
-  playerMeta.innerHTML = `${item.year} &middot; ${item.runtime} &middot; ${item.rating}`;
-  playerOverview.textContent = item.overview;
+function buildRow(def) {
+  const section = document.createElement("section");
+  section.className = "row";
+  section.id = `row-${def.key}`;
+  section.innerHTML = `
+    <div class="row-head">
+      <h2>${esc(def.title)}</h2>
+      <p>${esc(def.note)}</p>
+    </div>
+    <div class="grid" aria-busy="true">${skeletonCards(6)}</div>
+  `;
+  return section;
+}
 
-  const stage = document.getElementById("stage");
-  stage.style.setProperty("--h", item.hue);
+function errorBlock(def, retry) {
+  const block = document.createElement("div");
+  block.className = "row-error";
+  block.innerHTML = `<p>Couldn’t load ${esc(def.title.toLowerCase())}.</p>`;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "link-btn";
+  button.textContent = "Retry";
+  button.addEventListener("click", retry);
+  block.append(button);
+  return block;
+}
 
+async function loadRow(def) {
+  const section = document.getElementById(`row-${def.key}`);
+  const grid = section.querySelector(".grid");
+  grid.setAttribute("aria-busy", "true");
+
+  try {
+    const data = await api(catalogPath(def));
+    const metas = (data.metas || []).slice(0, PAGE_SIZE);
+    if (!metas.length) throw new Error("Empty catalog");
+    grid.classList.remove("is-error");
+    grid.replaceChildren(...metas.map(makeCard));
+  } catch (error) {
+    console.error(`Row "${def.key}" failed:`, error);
+    grid.classList.add("is-error");
+    grid.replaceChildren(errorBlock(def, () => loadRow(def)));
+  } finally {
+    grid.removeAttribute("aria-busy");
+  }
+}
+
+function buildRows() {
+  const fragment = document.createDocumentFragment();
+  ROWS.forEach((def) => fragment.append(buildRow(def)));
+  rowsRoot.append(fragment);
+  rowsRoot.removeAttribute("aria-busy");
+  ROWS.forEach(loadRow);
+}
+
+/* -------------------------------------------------------------------------
+   Player
+   ------------------------------------------------------------------------- */
+
+function setStageArt(meta) {
+  document.getElementById("stage-media").replaceChildren();
+  const art = meta.background || meta.poster;
+  if (!art) return;
+  const image = new Image();
+  image.alt = "";
+  image.src = art;
+  document.getElementById("stage-media").append(image);
+}
+
+function renderPlayer(meta) {
+  playerKind.textContent = meta.type === "series" ? "Series" : "Film";
+  playerTitle.textContent = meta.name || "Untitled";
+  playerMeta.innerHTML = heroMetaLine(meta);
+  playerOverview.textContent = meta.description || "";
+  setStageArt(meta);
+}
+
+function renderEpisodes(meta) {
+  const videos = (meta.videos || []).filter((video) => Number.isFinite(video.season) && Number.isFinite(video.number));
+  if (!videos.length) {
+    episodesAside.hidden = true;
+    playerInfo.classList.add("is-single");
+    return;
+  }
+
+  const season = Math.min(...videos.map((video) => video.season));
+  const episodes = videos
+    .filter((video) => video.season === season)
+    .sort((a, b) => a.number - b.number)
+    .slice(0, 12);
+
+  episodeCount.textContent = `Season ${season} · ${episodes.length} episodes`;
+
+  episodeList.replaceChildren(
+    ...episodes.map((video, index) => {
+      const item = document.createElement("li");
+      item.innerHTML = `
+        <button class="episode${index === 0 ? " is-current" : ""}" type="button">
+          <span class="ep-num">${esc(String(video.number).padStart(2, "0"))}</span>
+          <span class="ep-text">
+            <strong>${esc(video.name || `Episode ${video.number}`)}</strong>
+            <small>${esc(video.season !== undefined ? `S${video.season} E${video.number}` : "")}</small>
+          </span>
+          <span class="ep-bar" aria-hidden="true"></span>
+        </button>
+      `;
+      item.querySelector("button").addEventListener("click", (event) => {
+        episodeList.querySelectorAll(".episode").forEach((other) => other.classList.remove("is-current"));
+        event.currentTarget.classList.add("is-current");
+      });
+      return item;
+    }),
+  );
+
+  episodesAside.hidden = false;
+  playerInfo.classList.remove("is-single");
+}
+
+async function openPlayer(meta) {
+  const item = {
+    ...meta,
+    id: meta.id || meta.imdb_id,
+    type: meta.type || "movie",
+  };
+
+  playerInfo.classList.toggle("is-single", item.type !== "series");
+  episodesAside.hidden = true;
+  episodeList.replaceChildren();
+
+  renderPlayer(item);
   browseView.hidden = true;
   playerView.hidden = false;
   window.scrollTo({ top: 0, behavior: "instant" });
   document.getElementById("back-to-browse").focus({ preventScroll: true });
+
+  if (item.type !== "series" || !item.id) return;
+
+  try {
+    const data = await api(`/meta/series/${item.id}.json`);
+    if (data.meta) renderEpisodes(data.meta);
+  } catch (error) {
+    console.error("Episodes failed:", error);
+  }
 }
 
 function closePlayer() {
@@ -219,35 +318,15 @@ function closePlayer() {
   window.scrollTo({ top: 0, behavior: "instant" });
 }
 
-document.getElementById("back-to-browse").addEventListener("click", closePlayer);
+/* -------------------------------------------------------------------------
+   Boot
+   ------------------------------------------------------------------------- */
 
-document.querySelectorAll("[data-open-player]").forEach((button) => {
-  button.addEventListener("click", () => openPlayer(catalog[0]));
-});
+document.getElementById("back-to-browse").addEventListener("click", closePlayer);
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !playerView.hidden) closePlayer();
 });
 
-/* Season tabs are visual state only in the skeleton. */
-document.querySelectorAll(".season-tabs .chip").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    document
-      .querySelectorAll(".season-tabs .chip")
-      .forEach((other) => {
-        other.classList.toggle("is-active", other === tab);
-        other.setAttribute("aria-selected", String(other === tab));
-      });
-  });
-});
-
-/* Episode rows are visual state only in the skeleton. */
-document.querySelectorAll(".episode").forEach((episode) => {
-  episode.addEventListener("click", () => {
-    document
-      .querySelectorAll(".episode")
-      .forEach((other) => other.classList.toggle("is-current", other === episode));
-  });
-});
-
-renderRows();
+loadHero();
+buildRows();
