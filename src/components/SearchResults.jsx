@@ -5,8 +5,6 @@ export default function SearchResults({
   onOpen,
   onClear,
   onRetry,
-  isSaved,
-  onToggleSave,
   progressFor,
 }) {
   return (
@@ -18,8 +16,6 @@ export default function SearchResults({
         status={search.status}
         onOpen={onOpen}
         onRetry={onRetry}
-        isSaved={isSaved}
-        onToggleSave={onToggleSave}
         progressFor={progressFor}
         emptyMessage={`No matches for “${search.query}”. Try a different title.`}
         action={

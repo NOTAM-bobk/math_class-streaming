@@ -1,13 +1,7 @@
 import { BookmarkIcon, ChevronLeft } from "./Icons.jsx";
 import Tile from "./Tile.jsx";
 
-export default function WatchlistView({
-  items,
-  onOpen,
-  onToggleSave,
-  onBrowse,
-  progressFor,
-}) {
+export default function WatchlistView({ items, onOpen, onBrowse, progressFor }) {
   return (
     <main id="main" className="watchlist view-enter">
       <header className="page-head">
@@ -32,9 +26,7 @@ export default function WatchlistView({
             <Tile
               key={`${meta.type || "movie"}-${meta.id}`}
               meta={meta}
-              saved
               onOpen={onOpen}
-              onToggleSave={onToggleSave}
               progress={progressFor?.(meta) || null}
             />
           ))}
@@ -46,8 +38,8 @@ export default function WatchlistView({
           </span>
           <h2>Nothing saved yet</h2>
           <p>
-            Tap the bookmark on any poster to keep it here for later. Your list
-            stays in this browser.
+            Open any title and tap My List on its page to keep it here for later.
+            Your list stays in this browser.
           </p>
           <button type="button" className="btn btn-primary" onClick={onBrowse}>
             Find something to watch

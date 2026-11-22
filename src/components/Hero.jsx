@@ -1,14 +1,7 @@
 import Facts from "./Facts.jsx";
-import { BookmarkIcon, PlayIcon } from "./Icons.jsx";
+import { PlayIcon } from "./Icons.jsx";
 
-export default function Hero({
-  meta,
-  status,
-  saved = false,
-  onPlay,
-  onDetails,
-  onToggleSave,
-}) {
+export default function Hero({ meta, status, onPlay, onDetails }) {
   const loading = status === "loading";
   const image = meta?.background || meta?.poster;
 
@@ -76,18 +69,6 @@ export default function Hero({
               <PlayIcon />
               Play
             </button>
-
-            {meta && onToggleSave ? (
-              <button
-                type="button"
-                className={`btn btn-quiet${saved ? " is-saved" : ""}`}
-                aria-pressed={saved}
-                onClick={() => onToggleSave(meta)}
-              >
-                <BookmarkIcon filled={saved} />
-                {saved ? "In My List" : "My List"}
-              </button>
-            ) : null}
 
             <button
               type="button"
