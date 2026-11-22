@@ -1,0 +1,485 @@
+/* ==========================================================================
+   Polish pass — reads last. Thin mobile chrome, the network menu under the
+   brand, and the motion layer the flat editorial pass left behind.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+  --nav-h: 56px;
+}
+
+/* Base hygiene ----------------------------------------------------------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--nav-h) + 16px);
+}
+
+body {
+  overflow-x: clip;
+}
+
+h1,
+h2 {
+  text-wrap: balance;
+}
+
+a,
+button,
+input,
+select,
+[role="menuitem"] {
+  touch-action: manipulation;
+}
+
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .tile:hover .tile-art {
+    transform: translateY(-4px);
+  }
+  .arrow:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+}
+
+/* Nav: explicit transitions (no `all`) and the brand trigger ------------- */
+
+.nav-brand-pill {
+  gap: 7px;
+  background: transparent;
+  transition:
+    background 150ms var(--ease),
+    border-color 150ms var(--ease),
+    color 150ms var(--ease);
+}
+.nav-brand-pill svg {
+  width: 12px;
+  height: 12px;
+  color: #8f8a83;
+  transition: transform 200ms var(--ease), color 150ms var(--ease);
+}
+.nav-brand-pill.is-open {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.nav-brand-pill.is-open svg {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.nav-search-input {
+  transition:
+    background 150ms var(--ease),
+    border-color 150ms var(--ease),
+    box-shadow 150ms var(--ease);
+}
+
+.nav-search-clear,
+.nav-icon-btn,
+.nav-panic-btn,
+.nav-menu-item,
+.nav-modal-close {
+  transition:
+    background 150ms var(--ease),
+    border-color 150ms var(--ease),
+    color 150ms var(--ease),
+    box-shadow 150ms var(--ease),
+    transform 120ms var(--ease);
+}
+
+.nav-action-wrapper {
+  position: relative;
+}
+
+.nav-search-toggle {
+  display: none;
+}
+
+/* Network dropdown under the brand --------------------------------------- */
+
+.nav-brand-wrap {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.nav-brand-menu {
+  left: 0;
+  right: auto;
+  top: calc(100% + 10px);
+  min-width: 264px;
+  max-width: min(320px, calc(100vw - 28px));
+  padding: 7px;
+  border-radius: 14px;
+  background: #17171a;
+  border-color: rgba(255, 255, 255, 0.11);
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.6);
+  animation: navDropdownEnter 130ms var(--ease) both;
+}
+
+.nav-brand-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  color: #f4f4f5;
+  transition: background 140ms var(--ease);
+}
+.nav-brand-item:hover,
+.nav-brand-item:focus-visible {
+  background: rgba(255, 255, 255, 0.07);
+}
+.nav-brand-item svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+.nav-brand-item span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.nav-brand-item strong {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.nav-brand-item small {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+/* Motion ----------------------------------------------------------------- */
+
+@keyframes tileIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.tile {
+  animation: tileIn 320ms var(--ease) both;
+}
+.tile.is-skeleton {
+  animation: none;
+}
+
+@keyframes navSearchIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The editorial pass flattened the live dot; let it breathe again. */
+.rank-pill::before {
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+.hero-dot {
+  animation: livePulse 2.4s ease-in-out infinite;
+}
+
+.billboard-media img {
+  animation-duration: 900ms;
+}
+
+/* Phones and small tablets ----------------------------------------------- */
+
+@media (max-width: 720px) {
+  :root {
+    --page-x: 14px;
+    --nav-h: 50px;
+  }
+
+  /* One thin bar: brand + actions, search drops in only when asked for. */
+  .nav-wrapper {
+    padding: 6px var(--page-x) 4px;
+  }
+  .solid-3d-panel {
+    min-height: 44px;
+    padding: 4px 8px;
+    gap: 6px 8px;
+    border-radius: 13px;
+    align-items: center;
+  }
+  .nav-brand-wrap {
+    order: 1;
+    max-width: 58%;
+  }
+  .nav-brand-pill {
+    padding: 4px 9px;
+    font-size: 10.5px;
+    gap: 5px;
+  }
+  .nav-brand-pill svg {
+    width: 11px;
+    height: 11px;
+  }
+  .nav-actions {
+    order: 2;
+    gap: 4px;
+  }
+  .nav-icon-btn,
+  .nav-panic-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .nav-icon-btn svg,
+  .nav-panic-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+  .nav-count {
+    top: -2px;
+    right: -2px;
+    min-width: 15px;
+    height: 15px;
+    line-height: 15px;
+    font-size: 9px;
+  }
+  .nav-search-toggle {
+    display: inline-flex;
+  }
+  .nav-search-container {
+    order: 3;
+    display: none;
+    flex-basis: 100%;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+  .solid-3d-panel.is-search-open .nav-search-container {
+    display: block;
+    animation: navSearchIn 170ms var(--ease) both;
+  }
+  .nav-search-input {
+    height: 36px;
+    font-size: 16px; /* keeps iOS from zooming the page on focus */
+    padding: 0 36px 0 34px;
+  }
+  .nav-search-kbd {
+    display: none;
+  }
+  .nav-brand-menu {
+    top: calc(100% + 8px);
+  }
+  .nav-toast {
+    bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
+  /* Hero: warmer scrim, tighter type, less empty height. */
+  .billboard {
+    margin: 10px var(--page-x) 0;
+    min-height: clamp(360px, 66vh, 470px);
+    border-radius: 16px;
+  }
+  .billboard-scrim {
+    background:
+      linear-gradient(
+        0deg,
+        var(--bg) 2%,
+        rgba(8, 8, 10, 0.82) 42%,
+        rgba(8, 8, 10, 0.25) 82%,
+        transparent 100%
+      );
+  }
+  .billboard-body {
+    padding: 20px 16px 22px;
+  }
+  .billboard h1 {
+    max-width: 15ch;
+    font-size: clamp(34px, 10.5vw, 50px);
+  }
+  .billboard-copy {
+    margin: 12px 0 20px;
+    font-size: 13.5px;
+    -webkit-line-clamp: 3;
+  }
+  .facts {
+    gap: 8px 14px;
+    margin-top: 14px;
+    font-size: 12.5px;
+  }
+  .facts .score {
+    padding-right: 14px;
+  }
+  .facts .score strong {
+    font-size: 19px;
+  }
+  .hero-eyebrow {
+    margin-bottom: 12px;
+    padding: 4px 9px;
+    font-size: 11px;
+  }
+  .billboard-actions {
+    gap: 8px;
+  }
+  .billboard-actions .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Rows and tiles earn their space back. */
+  .rows {
+    gap: 12px;
+    padding: 12px var(--page-x) 34px;
+  }
+  .row {
+    padding: 12px 10px 4px;
+    border-radius: 14px;
+  }
+  .shelf-head {
+    margin-bottom: 10px;
+    padding: 0 2px;
+    gap: 10px;
+  }
+  .shelf-head h2 {
+    font-size: 19px;
+  }
+  .row-note {
+    font-size: 11.5px;
+  }
+  .shelf {
+    gap: 10px;
+    padding: 2px 2px 6px;
+  }
+  .tile {
+    flex-basis: 112px;
+  }
+  .top-ten-shelf .tile {
+    flex-basis: 126px;
+  }
+  .tile-title {
+    margin-top: 8px;
+    font-size: 12.5px;
+  }
+  .tile-meta {
+    gap: 8px;
+    font-size: 11px;
+  }
+  .shelf-actions .arrow {
+    display: none;
+  }
+
+  /* Player, list and search pages. */
+  .player {
+    padding: 12px var(--page-x) 40px;
+  }
+  .player-top {
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+  .player-actions {
+    gap: 6px;
+  }
+  .stage {
+    border-radius: 12px;
+  }
+  .player-info {
+    gap: 18px;
+    margin-top: 20px;
+  }
+  .player-copy,
+  .episodes {
+    padding: 14px;
+    border-radius: 14px;
+  }
+  .overview {
+    font-size: 13.5px;
+  }
+  .episode-list {
+    max-height: 300px;
+  }
+  .watchlist {
+    padding: 12px var(--page-x) 36px;
+    gap: 12px;
+  }
+  .watchlist-grid {
+    grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
+    gap: 14px 10px;
+    padding: 12px 10px 16px;
+  }
+  .page-head {
+    padding: 14px;
+    gap: 12px;
+  }
+  .page-head h1 {
+    font-size: 24px;
+  }
+  .search-results {
+    padding: 12px var(--page-x) 34px;
+  }
+  .footer {
+    margin: 8px var(--page-x) 0;
+    padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    margin-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+  .panic {
+    bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+
+  /* Inputs stay at 16px so iOS does not zoom the sheet. */
+  .settings-input,
+  .settings-custom-form input {
+    font-size: 16px;
+  }
+}
+
+/* Very small phones: keep the bar on one line. */
+@media (max-width: 380px) {
+  .nav-brand-pill {
+    padding: 3px 7px;
+    font-size: 9.5px;
+  }
+  .nav-icon-btn,
+  .nav-panic-btn {
+    width: 29px;
+    height: 29px;
+  }
+  .nav-actions {
+    gap: 3px;
+  }
+  .nav-share-btn {
+    display: none;
+  }
+}
+
+/* Motion preferences ----------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .tile,
+  .row,
+  .billboard,
+  .billboard-body,
+  .billboard-media img,
+  .view-enter {
+    animation: none !important;
+  }
+}
