@@ -1,130 +1,25 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>math_class streaming</title>
-  <meta name="description" content="math_class streaming — films and series for the math_class network, played in the browser.">
-  <meta name="theme-color" content="#08080a">
-  <meta name="color-scheme" content="dark">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2317171b'/%3E%3Crect x='8' y='18' width='4' height='6' rx='1' fill='%23f6f4f1' opacity='.5'/%3E%3Crect x='14' y='13' width='4' height='11' rx='1' fill='%23f6f4f1' opacity='.75'/%3E%3Crect x='20' y='8' width='4' height='16' rx='1' fill='%23e8b25f'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://v3-cinemeta.strem.io">
-  <link rel="preconnect" href="https://images.metahub.space">
-  <link rel="preconnect" href="https://vidfast.vc">
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <a class="skip-link" href="#browse">Skip to content</a>
-
-  <header class="nav">
-    <a class="brand" href="./" aria-label="math_class streaming home">
-      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
-      <span class="brand-name">math_class <em>streaming</em></span>
-    </a>
-
-    <div class="filters" role="group" aria-label="Filter by type">
-      <button class="filter" type="button" data-filter="all" aria-pressed="true">All</button>
-      <button class="filter" type="button" data-filter="movie" aria-pressed="false">Movies</button>
-      <button class="filter" type="button" data-filter="series" aria-pressed="false">Shows</button>
-    </div>
-
-    <form class="search" role="search" id="search-form">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
-      <label class="sr-only" for="search-input">Search movies and shows</label>
-      <input id="search-input" name="q" type="search" placeholder="Search movies and shows…" autocomplete="off" spellcheck="false">
-      <button class="search-clear" type="button" id="search-clear" aria-label="Clear search" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg>
-      </button>
-    </form>
-  </header>
-
-  <main id="browse">
-    <section class="billboard" aria-labelledby="hero-title">
-      <div class="billboard-media" id="hero-media" aria-hidden="true"></div>
-      <div class="billboard-scrim" aria-hidden="true"></div>
-
-      <div class="billboard-body">
-        <h1 id="hero-title">Loading…</h1>
-        <div class="facts" id="hero-facts"></div>
-        <p class="billboard-copy" id="hero-copy"></p>
-        <div class="billboard-actions">
-          <button class="btn btn-primary" id="hero-play" type="button" disabled>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor" stroke="none"></path></svg>
-            Play
-          </button>
-          <button class="btn btn-quiet" id="hero-details" type="button" disabled>Details</button>
-        </div>
-      </div>
-    </section>
-
-    <div class="rows" id="rows" aria-busy="true"></div>
-
-    <section class="row search-results" id="search-results" hidden aria-labelledby="search-title">
-      <div class="shelf-head">
-        <div class="shelf-heading">
-          <h2 id="search-title">Results</h2>
-          <p class="row-note" id="search-status" role="status" aria-live="polite"></p>
-        </div>
-        <div class="shelf-actions">
-          <button class="row-clear" id="search-close" type="button">Clear search</button>
-          <button class="arrow" type="button" data-dir="-1" aria-label="Scroll results left" disabled>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"></path></svg>
-          </button>
-          <button class="arrow" type="button" data-dir="1" aria-label="Scroll results right">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"></path></svg>
-          </button>
-        </div>
-      </div>
-      <div class="shelf" role="group" aria-label="Search results" tabindex="0"></div>
-    </section>
-  </main>
-
-  <section id="player" class="player" hidden aria-labelledby="player-title">
-    <div class="player-top">
-      <button class="btn btn-quiet btn-sm" type="button" id="back-to-browse">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"></path></svg>
-        Browse
-      </button>
-      <a class="player-source" id="player-external" href="https://vidfast.vc" target="_blank" rel="noopener noreferrer">Open in VidFast</a>
-    </div>
-
-    <div class="stage">
-      <iframe id="player-frame" title="Video player" src="about:blank" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="origin"></iframe>
-      <div class="stage-status" id="stage-status">Loading player…</div>
-    </div>
-    <p class="player-note" id="player-note">Playback is embedded from VidFast, a third-party player. If it stays blank, open it in a new tab.</p>
-
-    <div class="player-info" id="player-info">
-      <div class="player-copy">
-        <h1 id="player-title"></h1>
-        <div class="facts" id="player-facts"></div>
-        <p class="overview" id="player-overview"></p>
-      </div>
-
-      <aside class="episodes" id="episodes" aria-labelledby="episodes-title" hidden>
-        <div class="episodes-head">
-          <h2 id="episodes-title">Episodes</h2>
-          <label class="season-picker">
-            <span class="sr-only">Season</span>
-            <select id="season-select"></select>
-          </label>
-        </div>
-        <p class="episode-count" id="episode-count"></p>
-        <ol class="episode-list" id="episode-list"></ol>
-      </aside>
-    </div>
-  </section>
-
-  <footer class="footer">
-    <p><strong>math_class streaming</strong> — part of the math_class unblocked games network.</p>
-    <p class="footer-note">Catalog and artwork from Cinemeta. Playback embedded from VidFast.</p>
-  </footer>
-
-  <noscript><p class="noscript">math_class streaming needs JavaScript to load the catalog.</p></noscript>
-
-  <script src="app.js" defer></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#08080a" />
+    <meta
+      name="description"
+      content="math_class streaming — movies and shows with instant playback, part of the math_class unblocked games network."
+    />
+    <title>math_class streaming</title>
+    <link rel="icon" type="image/svg+xml" href="/app-icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
