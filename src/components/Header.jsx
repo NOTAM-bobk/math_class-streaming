@@ -11,6 +11,7 @@ import {
   ShuffleIcon,
   ExternalLinkIcon,
   CheckIcon,
+  BookmarkIcon,
 } from "./Icons.jsx";
 import { triggerPanic, usePanicShortcut } from "./PanicButton.jsx";
 import SettingsModal from "./SettingsModal.jsx";
@@ -47,6 +48,9 @@ export default function Header({
   onHome,
   recentCount = 0,
   onClearRecent,
+  watchlistCount = 0,
+  watchlistActive = false,
+  onWatchlist,
 }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -194,6 +198,25 @@ export default function Header({
 
         {/* Right: Actions */}
         <div className="nav-actions">
+          {/* My List Button */}
+          <button
+            type="button"
+            className={`nav-icon-btn${watchlistActive ? " is-active" : ""}`}
+            title="My List — saved titles"
+            aria-label={`My List, ${watchlistCount} saved title${
+              watchlistCount === 1 ? "" : "s"
+            }`}
+            aria-pressed={watchlistActive}
+            onClick={onWatchlist}
+          >
+            <BookmarkIcon filled={watchlistActive} />
+            {watchlistCount > 0 ? (
+              <span className="nav-count">
+                {watchlistCount > 9 ? "9+" : watchlistCount}
+              </span>
+            ) : null}
+          </button>
+
           {/* Notifications Button */}
           <div className="nav-action-wrapper">
             <button
@@ -312,6 +335,21 @@ export default function Header({
                   >
                     <ShuffleIcon />
                     <span>Random title</span>
+                  </button>
+                )}
+
+                {onWatchlist && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="nav-menu-item"
+                    onClick={() => {
+                      setMoreOpen(false);
+                      onWatchlist();
+                    }}
+                  >
+                    <BookmarkIcon filled={watchlistActive} />
+                    <span>My List ({watchlistCount})</span>
                   </button>
                 )}
 

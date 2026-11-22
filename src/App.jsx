@@ -4,19 +4,39 @@ import Hero from "./components/Hero.jsx";
 import PlayerView from "./components/PlayerView.jsx";
 import SearchResults from "./components/SearchResults.jsx";
 import Shelf from "./components/Shelf.jsx";
+import TopTen from "./components/TopTen.jsx";
+import WatchlistView from "./components/WatchlistView.jsx";
+import { BookmarkIcon } from "./components/Icons.jsx";
 import { catalog } from "./lib/catalog.js";
 import { GAMES_URL, HERO, ROWS } from "./lib/constants.js";
 import { relativeTime } from "./lib/format.js";
 import { readHistory, recordHistory, writeHistory } from "./lib/history.js";
+import {
+  isSaved as isInWatchlist,
+  readWatchlist,
+  toggleWatchlist,
+} from "./lib/watchlist.js";
 
 export default function App() {
   const [filter, setFilter] = useState("all");
+  const [view, setView] = useState("browse");
   const [input, setInput] = useState("");
   const [search, setSearch] = useState(null);
   const [player, setPlayer] = useState(null);
   const [hero, setHero] = useState({ status: "loading", meta: null });
   const [recent, setRecent] = useState(readHistory);
+  const [watchlist, setWatchlist] = useState(readWatchlist);
+  const [toast, setToast] = useState(null);
   const searchToken = useRef(0);
+  const toastTimer = useRef(0);
+
+  const notify = useCallback((message) => {
+    setToast(message);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 2400);
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   useEffect(() => {
     let alive = true;
@@ -66,10 +86,43 @@ export default function App() {
 
   const goHome = useCallback(() => {
     setPlayer(null);
+    setView("browse");
     clearSearch();
     setFilter("all");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [clearSearch]);
+
+  const showWatchlist = useCallback(() => {
+    setPlayer(null);
+    setView("watchlist");
+    clearSearch();
+    window.scrollTo(0, 0);
+  }, [clearSearch]);
+
+  const browse = useCallback(() => {
+    setView("browse");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const saved = useCallback(
+    (meta) => isInWatchlist(watchlist, meta),
+    [watchlist]
+  );
+
+  const toggleSave = useCallback(
+    (meta) => {
+      if (!meta) return;
+      const next = toggleWatchlist(watchlist, meta);
+      setWatchlist(next);
+      const nowSaved = isInWatchlist(next, meta);
+      notify(
+        nowSaved
+          ? `Added “${meta.name}” to My List`
+          : `Removed “${meta.name}” from My List`
+      );
+    },
+    [notify, watchlist]
+  );
 
   const submitSearch = useCallback(
     async (raw) => {
@@ -80,6 +133,7 @@ export default function App() {
       }
 
       setPlayer(null);
+      setView("browse");
       setInput(query);
       setSearch({ query, status: "loading", items: [], message: "Searching…" });
       window.history.replaceState(
@@ -150,6 +204,7 @@ export default function App() {
 
   const changeFilter = (next) => {
     if (search) clearSearch();
+    setView("browse");
     setFilter(next);
   };
 
@@ -179,6 +234,9 @@ export default function App() {
         onHome={goHome}
         recentCount={recent.length}
         onClearRecent={clearRecent}
+        watchlistCount={watchlist.length}
+        watchlistActive={view === "watchlist" && !player && !search}
+        onWatchlist={showWatchlist}
       />
 
       {player ? (
@@ -186,6 +244,8 @@ export default function App() {
           meta={player.meta}
           autoplay={player.autoplay}
           onBack={closePlayer}
+          saved={saved(player.meta)}
+          onToggleSave={toggleSave}
         />
       ) : search ? (
         <SearchResults
@@ -193,21 +253,44 @@ export default function App() {
           onOpen={openPlayer}
           onClear={clearSearch}
           onRetry={() => submitSearch(search.query)}
+          isSaved={saved}
+          onToggleSave={toggleSave}
+        />
+      ) : view === "watchlist" ? (
+        <WatchlistView
+          items={watchlist}
+          onOpen={openPlayer}
+          onToggleSave={toggleSave}
+          onBrowse={browse}
         />
       ) : (
-        <main id="main">
+        <main id="main" className="view-enter">
           <Hero
             meta={hero.meta}
             status={hero.status}
+            saved={saved(hero.meta)}
             onPlay={(meta) => openPlayer(meta, true)}
             onDetails={(meta) => openPlayer(meta, false)}
+            onToggleSave={toggleSave}
           />
           <div className="rows">
+            {filter === "all" ? (
+              <TopTen
+                index={0}
+                onOpen={openPlayer}
+                isSaved={saved}
+                onToggleSave={toggleSave}
+              />
+            ) : null}
+
             {filter === "all" && recent.length > 0 ? (
               <Shelf
                 title="Recently watched"
                 items={recent}
                 onOpen={openPlayer}
+                isSaved={saved}
+                onToggleSave={toggleSave}
+                index={1}
                 metaText={(item) => `Watched ${relativeTime(item.watchedAt)}`}
                 action={
                   <button
@@ -221,13 +304,16 @@ export default function App() {
               />
             ) : null}
 
-            {visibleRows.map((row) => (
+            {visibleRows.map((row, index) => (
               <Shelf
                 key={row.key}
                 title={row.title}
                 note={row.note}
                 def={row}
                 onOpen={openPlayer}
+                isSaved={saved}
+                onToggleSave={toggleSave}
+                index={index + (filter === "all" ? 2 : 1)}
               />
             ))}
           </div>
@@ -243,6 +329,13 @@ export default function App() {
           Catalog from Cinemeta. Playback embedded from VidFast.
         </p>
       </footer>
+
+      {toast ? (
+        <div className="app-toast" role="status">
+          <BookmarkIcon filled />
+          <span>{toast}</span>
+        </div>
+      ) : null}
     </>
   );
 }
