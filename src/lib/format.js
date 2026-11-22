@@ -11,6 +11,38 @@ export function runtimeOf(meta) {
   return typeof meta?.runtime === "string" ? meta.runtime.trim() : "";
 }
 
+// "148 min" / "2h 28min" / "148" -> "2hr 28min"
+export function formatMinutes(total) {
+  const minutes = Math.max(0, Math.round(Number(total) || 0));
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours && mins) return `${hours}hr ${mins}min`;
+  if (hours) return `${hours}hr`;
+  return `${mins}min`;
+}
+
+export function formatRuntime(value) {
+  const text = String(value || "");
+  if (!text.trim()) return "";
+  const hoursMatch = text.match(/(\d+)\s*h/i);
+  const minsMatch = text.match(/(\d+)\s*m/i);
+  let minutes = 0;
+  if (hoursMatch) minutes += Number(hoursMatch[1]) * 60;
+  if (minsMatch) minutes += Number(minsMatch[1]);
+  if (!minutes) {
+    const plain = Number.parseInt(text, 10);
+    if (Number.isFinite(plain)) minutes = plain;
+  }
+  return minutes > 0 ? formatMinutes(minutes) : "";
+}
+
+// Seconds -> "1hr 14min" (whole minutes, for resume positions)
+export function formatPosition(seconds) {
+  const value = Number(seconds);
+  if (!Number.isFinite(value) || value < 60) return "under a minute";
+  return formatMinutes(Math.floor(value / 60));
+}
+
 export function relativeTime(timestamp) {
   const then = Number(timestamp);
   if (!Number.isFinite(then)) return "recently";

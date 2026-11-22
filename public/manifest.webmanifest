@@ -1,0 +1,35 @@
+{
+  "id": "/",
+  "name": "math_class:network",
+  "short_name": "math_class",
+  "lang": "en",
+  "description": "math_class:network — movies and shows with instant playback, part of the math_class unblocked games network.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#08080a",
+  "theme_color": "#08080a",
+  "categories": ["entertainment", "video"],
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
