@@ -38,6 +38,44 @@ function embedProxy() {
   };
 }
 
+// Mirror the Vercel Adcash proxy in `vite dev`, so the ad library loads on the
+// same origin locally too.
+function adcashProxy() {
+  return {
+    name: "adcash-proxy",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url || !req.url.startsWith("/api/adcash/")) return next();
+        try {
+          const upstream = await fetch(
+            `https://acscdn.com${req.url.replace("/api/adcash", "")}`,
+            {
+              headers: {
+                "user-agent": req.headers["user-agent"] || "math-class-streaming",
+                accept: req.headers.accept || "*/*",
+                referer: "https://acscdn.com/",
+              },
+            }
+          );
+          const buffer = Buffer.from(await upstream.arrayBuffer());
+          res.statusCode = upstream.status;
+          res.setHeader(
+            "content-type",
+            upstream.headers.get("content-type") ||
+              "application/javascript; charset=utf-8"
+          );
+          res.setHeader("cache-control", "public, max-age=300");
+          res.end(buffer);
+        } catch {
+          res.statusCode = 502;
+          res.setHeader("content-type", "text/plain; charset=utf-8");
+          res.end("The ad proxy could not reach Adcash.");
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), embedProxy()],
+  plugins: [react(), embedProxy(), adcashProxy()],
 });

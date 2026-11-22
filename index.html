@@ -2,10 +2,37 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Adcash Autotag -->
-    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
-    <script type="text/javascript">
-      aclib.runAutoTag({ zoneId: "pk5bgzzsjw" });
+    <!-- Adcash Autotag, loaded through our Vercel proxy so a blocked adcash CDN
+         does not stop it; falls back to the CDN when the proxy is unavailable. -->
+    <script>
+      (function () {
+        var started = false;
+        var fellBack = false;
+        function runAutoTag() {
+          if (started || !window.aclib) return;
+          started = true;
+          window.aclib.runAutoTag({ zoneId: "pk5bgzzsjw" });
+        }
+        function loadDirect() {
+          if (fellBack) return;
+          fellBack = true;
+          load("https://acscdn.com/script/aclib.js", true);
+        }
+        function load(src, isFallback) {
+          var script = document.createElement("script");
+          script.id = "aclib";
+          script.type = "text/javascript";
+          script.async = true;
+          script.src = src;
+          script.onload = function () {
+            if (window.aclib) runAutoTag();
+            else if (!isFallback) loadDirect();
+          };
+          if (!isFallback) script.onerror = loadDirect;
+          document.head.appendChild(script);
+        }
+        load("/api/adcash/script/aclib.js");
+      })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
