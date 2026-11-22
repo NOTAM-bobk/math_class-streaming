@@ -1,7 +1,13 @@
 import { BookmarkIcon, ChevronLeft } from "./Icons.jsx";
 import Tile from "./Tile.jsx";
 
-export default function WatchlistView({ items, onOpen, onToggleSave, onBrowse }) {
+export default function WatchlistView({
+  items,
+  onOpen,
+  onToggleSave,
+  onBrowse,
+  progressFor,
+}) {
   return (
     <main id="main" className="watchlist view-enter">
       <header className="page-head">
@@ -29,6 +35,7 @@ export default function WatchlistView({ items, onOpen, onToggleSave, onBrowse })
               saved
               onOpen={onOpen}
               onToggleSave={onToggleSave}
+              progress={progressFor?.(meta) || null}
             />
           ))}
         </div>

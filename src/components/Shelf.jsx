@@ -28,6 +28,7 @@ export default function Shelf({
   onRetry,
   isSaved,
   onToggleSave,
+  progressFor,
   index = 0,
 }) {
   const [remote, setRemote] = useState({
@@ -169,6 +170,7 @@ export default function Shelf({
                 metaText={metaText ? metaText(meta) : ""}
                 saved={Boolean(isSaved?.(meta))}
                 onToggleSave={onToggleSave}
+                progress={progressFor?.(meta) || null}
               />
             ))
           : null}
