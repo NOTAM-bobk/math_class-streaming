@@ -2,9 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { catalog } from "../lib/catalog.js";
 import { episodeUrl, idOf, movieUrl, PLAYER_API } from "../lib/player.js";
 import Facts from "./Facts.jsx";
-import { ChevronLeft, PlayIcon } from "./Icons.jsx";
+import { BookmarkIcon, ChevronLeft, PlayIcon } from "./Icons.jsx";
 
-export default function PlayerView({ meta, autoplay, onBack }) {
+export default function PlayerView({
+  meta,
+  autoplay,
+  onBack,
+  saved = false,
+  onToggleSave,
+}) {
   const [videos, setVideos] = useState([]);
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
@@ -102,14 +108,27 @@ export default function PlayerView({ meta, autoplay, onBack }) {
           <ChevronLeft />
           Back to browse
         </button>
-        <a
-          className="player-source"
-          href={src || PLAYER_API}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Open in VidFast
-        </a>
+        <div className="player-actions">
+          {onToggleSave ? (
+            <button
+              type="button"
+              className={`btn btn-quiet btn-sm${saved ? " is-saved" : ""}`}
+              aria-pressed={saved}
+              onClick={() => onToggleSave(meta)}
+            >
+              <BookmarkIcon filled={saved} />
+              {saved ? "In My List" : "My List"}
+            </button>
+          ) : null}
+          <a
+            className="player-source"
+            href={src || PLAYER_API}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open in VidFast
+          </a>
+        </div>
       </div>
 
       <div className="stage">
@@ -127,7 +146,8 @@ export default function PlayerView({ meta, autoplay, onBack }) {
         />
         {status ? (
           <div className="stage-status" role="status">
-            {status}
+            {error ? null : <span className="spinner" aria-hidden="true" />}
+            <span>{status}</span>
           </div>
         ) : null}
       </div>
