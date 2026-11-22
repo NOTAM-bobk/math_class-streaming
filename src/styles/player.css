@@ -1,0 +1,436 @@
+/* --------------------------------------------------------------------------
+   Player
+   -------------------------------------------------------------------------- */
+
+.player {
+  padding: 18px var(--page-x) 60px;
+  animation: enter 200ms var(--ease) both;
+}
+
+.player-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.player-source {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.player-source:hover {
+  color: var(--text);
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 72vh;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: #000;
+}
+
+.stage iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #000;
+}
+
+.stage-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #0b0b0e;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.player-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted-2);
+}
+
+.player-info {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
+  margin-top: 28px;
+}
+.player-info.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+.player-info.is-single .player-copy {
+  max-width: 760px;
+}
+
+.player-copy h1 {
+  margin: 0;
+  font-size: clamp(26px, 3.2vw, 36px);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.player-copy .facts {
+  margin-top: 14px;
+}
+
+.overview {
+  margin: 18px 0 0;
+  max-width: 68ch;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #bdb8b1;
+}
+
+.episodes {
+  min-width: 0;
+}
+
+.episodes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.episodes-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.season-picker select {
+  height: 30px;
+  padding: 0 26px 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.episode-count {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.episode-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.episode {
+  display: grid;
+  grid-template-columns: 24px 1fr 14px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 150ms var(--ease),
+    border-color 150ms var(--ease);
+}
+.episode:hover {
+  background: var(--panel);
+}
+.episode.is-current {
+  background: var(--panel);
+  border-color: var(--line-strong);
+}
+
+.ep-number {
+  font-size: 11px;
+  color: var(--muted);
+}
+.episode.is-current .ep-number {
+  color: var(--accent);
+}
+
+.ep-name {
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ep-play {
+  display: inline-flex;
+  color: var(--muted-2);
+  opacity: 0;
+}
+.ep-play svg {
+  width: 9px;
+  height: 9px;
+}
+.episode:hover .ep-play,
+.episode.is-current .ep-play {
+  opacity: 1;
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+.footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 26px var(--page-x) 46px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+.footer p {
+  margin: 0;
+}
+.footer strong {
+  color: var(--text);
+  font-weight: 500;
+}
+.footer a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
+}
+.footer a:hover {
+  color: var(--text);
+}
+.footer-note {
+  color: var(--muted-2);
+}
+
+/* --------------------------------------------------------------------------
+   Panic
+   -------------------------------------------------------------------------- */
+
+.panic {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 70;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(17, 17, 20, 0.92);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition:
+    background 150ms var(--ease),
+    color 150ms var(--ease),
+    border-color 150ms var(--ease);
+}
+.panic:hover {
+  background: var(--text);
+  border-color: var(--text);
+  color: #0b0b0d;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .player-info {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 880px) {
+  .nav {
+    flex-wrap: wrap;
+    height: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    gap: 8px 10px;
+  }
+
+  .brand {
+    flex: 1 1 auto;
+  }
+
+  .games-link {
+    order: 2;
+  }
+
+  .filters {
+    order: 3;
+  }
+
+  .search {
+    order: 4;
+    flex: 1 1 150px;
+    width: auto;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .brand-name em {
+    display: none;
+  }
+
+  .games-long {
+    display: none;
+  }
+  .games-short {
+    display: inline;
+  }
+
+  .filter {
+    height: 32px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .billboard {
+    min-height: clamp(400px, 64vh, 560px);
+  }
+  .billboard-body {
+    padding: 28px var(--page-x) 30px;
+  }
+  .billboard h1 {
+    font-size: clamp(32px, 10vw, 46px);
+  }
+  .billboard-copy {
+    margin-bottom: 20px;
+    -webkit-line-clamp: 2;
+  }
+
+  .facts {
+    margin-top: 14px;
+    gap: 8px 14px;
+  }
+  .facts .score {
+    padding-right: 14px;
+  }
+
+  .rows {
+    gap: 30px;
+    padding-top: 24px;
+  }
+
+  .shelf-head {
+    align-items: center;
+  }
+  .shelf-actions .arrow {
+    display: none;
+  }
+
+  .tile {
+    flex-basis: 128px;
+  }
+  .tile-title {
+    font-size: 12.5px;
+  }
+  .tile-meta {
+    gap: 8px;
+    font-size: 11px;
+  }
+
+  .player {
+    padding: 14px var(--page-x) 48px;
+  }
+  .player-top {
+    margin-bottom: 10px;
+  }
+  .player-info {
+    margin-top: 22px;
+    gap: 24px;
+  }
+  .episode-list {
+    max-height: 280px;
+  }
+
+  .footer {
+    padding-bottom: 84px;
+  }
+
+  .panic {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    height: 44px;
+    padding: 0 16px;
+    font-size: 12.5px;
+  }
+}
+
+@media (max-width: 400px) {
+  .tile {
+    flex-basis: 118px;
+  }
+  .billboard h1 {
+    font-size: 31px;
+  }
+  .row-clear {
+    padding: 0 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .shelf {
+    scroll-behavior: auto;
+  }
+  .skeleton::after {
+    display: none;
+  }
+}
