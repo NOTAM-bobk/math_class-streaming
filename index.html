@@ -5,18 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#08080a" />
+    <meta name="application-name" content="math_class:network" />
+    <meta name="apple-mobile-web-app-title" content="math_class:network" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta
       name="description"
-      content="math_class streaming — movies and shows with instant playback, part of the math_class unblocked games network."
+      content="math_class:network — movies and shows with instant playback, part of the math_class unblocked games network."
     />
-    <title>math_class streaming</title>
+    <!-- Not for search engines, crawlers or AI training. -->
+    <meta
+      name="robots"
+      content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai"
+    />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, noimageindex" />
+    <meta name="bingbot" content="noindex, nofollow, noarchive, noimageindex" />
+    <title>math_class:network</title>
     <link rel="icon" type="image/svg+xml" href="/app-icon.svg" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    <script>
+      // Keep the install prompt until an in-app button asks for it.
+      window.__pwaInstallPrompt = null;
+      window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        window.__pwaInstallPrompt = event;
+        window.dispatchEvent(new Event("mcn:install-available"));
+      });
+      window.addEventListener("appinstalled", function () {
+        window.__pwaInstallPrompt = null;
+        window.dispatchEvent(new Event("mcn:install-available"));
+      });
+    </script>
     <script defer src="https://cloud.umami.is/script.js" data-website-id="441f5c6a-db6c-4afc-9682-2810d7645e8c"></script>
   </head>
   <body>

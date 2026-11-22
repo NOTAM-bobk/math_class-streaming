@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#08080a" />
+    <title>Offline — math_class:network</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px;
+        background: radial-gradient(120% 80% at 50% -20%, rgba(232, 178, 95, 0.08), transparent 60%), #08080a;
+        color: #f6f4f1;
+        font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        text-align: center;
+      }
+      .panel {
+        width: min(420px, 100%);
+        padding: 30px 26px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        background: linear-gradient(180deg, #1d1d1d, #17171a);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        margin: 0 auto 16px;
+        border-radius: 50%;
+        background: #e8b25f;
+        box-shadow: 0 0 12px #e8b25f;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 22px;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 0 0 20px;
+        color: #a6a29c;
+        font-size: 13.5px;
+        line-height: 1.6;
+      }
+      button {
+        height: 40px;
+        padding: 0 20px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        background: #f6f4f1;
+        color: #0b0b0d;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <div class="dot"></div>
+      <h1>You're offline</h1>
+      <p>The catalog needs a connection. Reconnect and the app will pick up right where you left off.</p>
+      <button type="button" onclick="window.location.reload()">Try again</button>
+    </div>
+  </body>
+</html>
