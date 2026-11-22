@@ -1,13 +1,11 @@
 import { formatPosition, genresOf, hueOf, initials, yearOf } from "../lib/format.js";
 import { progressRatio } from "../lib/progress.js";
-import { BookmarkIcon, PlayIcon } from "./Icons.jsx";
+import { PlayIcon } from "./Icons.jsx";
 
 export default function Tile({
   meta,
   onOpen,
   metaText = "",
-  saved = false,
-  onToggleSave,
   progress = null,
   rank,
 }) {
@@ -62,23 +60,6 @@ export default function Tile({
           >
             <span style={{ width: `${Math.min(100, watched * 100)}%` }} />
           </span>
-        ) : null}
-
-        {onToggleSave ? (
-          <button
-            type="button"
-            className={`tile-save${saved ? " is-saved" : ""}`}
-            aria-pressed={saved}
-            aria-label={
-              saved
-                ? `Remove ${meta.name} from My List`
-                : `Add ${meta.name} to My List`
-            }
-            title={saved ? "Remove from My List" : "Add to My List"}
-            onClick={() => onToggleSave(meta)}
-          >
-            <BookmarkIcon filled={saved} />
-          </button>
         ) : null}
       </div>
 
