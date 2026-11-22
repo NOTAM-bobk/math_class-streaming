@@ -5,13 +5,7 @@ import Tile from "./Tile.jsx";
 
 const COUNT = 10;
 
-export default function TopTen({
-  onOpen,
-  isSaved,
-  onToggleSave,
-  progressFor,
-  index = 0,
-}) {
+export default function TopTen({ onOpen, progressFor, index = 0 }) {
   const [state, setState] = useState({ status: "loading", items: [] });
   const [attempt, setAttempt] = useState(0);
   const [edges, setEdges] = useState({ left: false, right: false });
@@ -140,8 +134,6 @@ export default function TopTen({
                 meta={meta}
                 rank={position + 1}
                 onOpen={onOpen}
-                saved={Boolean(isSaved?.(meta))}
-                onToggleSave={onToggleSave}
                 progress={progressFor?.(meta) || null}
               />
             ))

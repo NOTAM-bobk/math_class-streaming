@@ -26,8 +26,6 @@ export default function Shelf({
   action,
   metaText,
   onRetry,
-  isSaved,
-  onToggleSave,
   progressFor,
   index = 0,
 }) {
@@ -35,6 +33,7 @@ export default function Shelf({
     status: def ? "loading" : "ready",
     items: [],
   });
+  const [count, setCount] = useState(PAGE_SIZE);
   const [attempt, setAttempt] = useState(0);
   const shelfRef = useRef(null);
   const [edges, setEdges] = useState({ left: false, right: false });
@@ -43,6 +42,7 @@ export default function Shelf({
     if (!def) return undefined;
 
     let alive = true;
+    setCount(PAGE_SIZE);
     setRemote({ status: "loading", items: [] });
 
     catalog
@@ -55,7 +55,6 @@ export default function Shelf({
         if (def.catalog === "year") {
           metas = metas.filter((meta) => yearOf(meta).startsWith(def.genre));
         }
-        metas = metas.slice(0, PAGE_SIZE);
         setRemote({ status: metas.length ? "ready" : "empty", items: metas });
       })
       .catch(() => {
@@ -68,16 +67,24 @@ export default function Shelf({
   }, [def, attempt]);
 
   const currentStatus = def ? remote.status : status;
-  const list = def ? remote.items : items || [];
+  const pool = def ? remote.items : items || [];
+  const list = def ? pool.slice(0, count) : pool;
+  const hasMore = Boolean(def) && count < pool.length;
+
+  const hasMoreRef = useRef(hasMore);
+  hasMoreRef.current = hasMore;
+
+  const loadMore = useCallback(() => {
+    setCount((value) => value + PAGE_SIZE);
+  }, []);
 
   const updateEdges = useCallback(() => {
     const node = shelfRef.current;
     if (!node) return;
-    setEdges({
-      left: node.scrollLeft > 4,
-      right: node.scrollLeft + node.clientWidth < node.scrollWidth - 4,
-    });
-  }, []);
+    const right = node.scrollLeft + node.clientWidth < node.scrollWidth - 4;
+    setEdges({ left: node.scrollLeft > 4, right });
+    if (!right && hasMoreRef.current) loadMore();
+  }, [loadMore]);
 
   useEffect(() => {
     updateEdges();
@@ -168,8 +175,6 @@ export default function Shelf({
                 meta={meta}
                 onOpen={onOpen}
                 metaText={metaText ? metaText(meta) : ""}
-                saved={Boolean(isSaved?.(meta))}
-                onToggleSave={onToggleSave}
                 progress={progressFor?.(meta) || null}
               />
             ))
