@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { catalog } from "../lib/catalog.js";
-import { formatMinutes, formatPosition } from "../lib/format.js";
+import { formatMinutes, formatPosition, genresOf } from "../lib/format.js";
 import {
   directUrl,
   episodeUrl,
@@ -16,6 +16,7 @@ import {
 } from "../lib/progress.js";
 import { themeHex } from "../lib/settings.js";
 import Facts from "./Facts.jsx";
+import Shelf from "./Shelf.jsx";
 import { titlePath } from "../lib/routes.js";
 import {
   BookmarkIcon,
@@ -77,6 +78,7 @@ export default function PlayerView({
   meta,
   autoplay,
   onBack,
+  onOpen,
   saved = false,
   onToggleSave,
   settings,
@@ -97,6 +99,8 @@ export default function PlayerView({
   const [duration, setDuration] = useState(0);
   const [resumeAt, setResumeAt] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [related, setRelated] = useState({ status: "loading", items: [] });
+  const [relatedAttempt, setRelatedAttempt] = useState(0);
 
   const iframeRef = useRef(null);
   const positionRef = useRef(0);
@@ -240,6 +244,27 @@ export default function PlayerView({
     theme,
     wantsAutoplay,
   ]);
+
+  // Genre neighbours for the "More like this" shelf under the player.
+  useEffect(() => {
+    let alive = true;
+    setRelated({ status: "loading", items: [] });
+    if (!meta?.id) return undefined;
+
+    catalog
+      .related(meta)
+      .then((items) => {
+        if (!alive) return;
+        setRelated({ status: items.length ? "ready" : "empty", items });
+      })
+      .catch(() => {
+        if (alive) setRelated({ status: "error", items: [] });
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [meta, relatedAttempt]);
 
   useEffect(() => {
     const onMessage = (event) => {
@@ -527,6 +552,19 @@ export default function PlayerView({
           </aside>
         ) : null}
       </div>
+
+      {onOpen && related.status !== "empty" ? (
+        <div className="player-more">
+          <Shelf
+            title="More like this"
+            note={genresOf(meta).slice(0, 2).join(" · ")}
+            items={related.items}
+            status={related.status}
+            onOpen={onOpen}
+            onRetry={() => setRelatedAttempt((value) => value + 1)}
+          />
+        </div>
+      ) : null}
     </main>
   );
 }
