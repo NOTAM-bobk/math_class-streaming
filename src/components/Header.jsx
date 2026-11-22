@@ -1,11 +1,15 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { GAMES_URL } from "../lib/constants.js";
 import {
-  SearchIcon,
-  XIcon,
-  ShareIcon,
-  SettingsIcon,
-  ShieldAlertIcon,
   BookmarkIcon,
+  ChevronDown,
+  FilmIcon,
+  GamepadIcon,
+  SearchIcon,
+  SettingsIcon,
+  ShareIcon,
+  ShieldAlertIcon,
+  XIcon,
 } from "./Icons.jsx";
 import { triggerPanic, usePanicShortcut } from "./PanicButton.jsx";
 import SettingsModal from "./SettingsModal.jsx";
@@ -32,9 +36,13 @@ export default function Header({
   onInstall,
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [brandOpen, setBrandOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
   const searchRef = useRef(null);
+  const brandRef = useRef(null);
+  const brandButtonRef = useRef(null);
 
   // Global panic shortcut ']'
   usePanicShortcut();
@@ -52,6 +60,7 @@ export default function Header({
           return;
         }
         event.preventDefault();
+        setSearchOpen(true);
         searchRef.current?.focus();
       }
     };
@@ -59,8 +68,37 @@ export default function Header({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleBrandClick = (e) => {
-    e.preventDefault();
+  // Brand menu: dismiss on outside press or Escape.
+  useEffect(() => {
+    if (!brandOpen) return undefined;
+    const onPointerDown = (event) => {
+      if (brandRef.current && !brandRef.current.contains(event.target)) {
+        setBrandOpen(false);
+      }
+    };
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      setBrandOpen(false);
+      brandButtonRef.current?.focus();
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [brandOpen]);
+
+  useEffect(() => {
+    if (searchOpen && searchRef.current) searchRef.current.focus();
+  }, [searchOpen]);
+
+  const handleBrandToggle = () => setBrandOpen((open) => !open);
+
+  const goMovies = (event) => {
+    event.preventDefault();
+    setBrandOpen(false);
+    setSearchOpen(false);
     if (onHome) onHome();
     else if (onClear) onClear();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -96,19 +134,76 @@ export default function Header({
     if (onSubmit) onSubmit(query);
   };
 
+  const handleSearchEscape = (e) => {
+    if (e.key !== "Escape") return;
+    if (query) {
+      e.preventDefault();
+      onClear();
+      return;
+    }
+    setSearchOpen(false);
+  };
+
+  const searchVisible = searchOpen || Boolean(query);
+
   return (
     <header className="nav-wrapper">
-      <div className="solid-3d-panel">
-        {/* Left: Brand pill */}
-        <a
-          href="/"
-          className="nav-brand-pill"
-          onClick={handleBrandClick}
-          aria-label="math_class:network home"
-          title="math_class:network"
-        >
-          math_class:network
-        </a>
+      <div
+        className={`solid-3d-panel${searchVisible ? " is-search-open" : ""}`}
+      >
+        {/* Left: Brand + network menu */}
+        <div className="nav-brand-wrap" ref={brandRef}>
+          <button
+            type="button"
+            ref={brandButtonRef}
+            className={`nav-brand-pill${brandOpen ? " is-open" : ""}`}
+            aria-expanded={brandOpen}
+            aria-haspopup="menu"
+            aria-controls="nav-brand-menu"
+            title="Switch between unblocked movies and games"
+            onClick={handleBrandToggle}
+          >
+            math_class:network
+            <ChevronDown />
+          </button>
+
+          {brandOpen ? (
+            <div
+              id="nav-brand-menu"
+              className="nav-dropdown nav-brand-menu"
+              role="menu"
+              aria-label="math_class network"
+            >
+              <a
+                className="nav-brand-item"
+                href="/"
+                role="menuitem"
+                aria-current="page"
+                onClick={goMovies}
+              >
+                <FilmIcon />
+                <span>
+                  <strong>Unblocked movies</strong>
+                  <small>You're on the movies site</small>
+                </span>
+              </a>
+              <a
+                className="nav-brand-item"
+                href={GAMES_URL}
+                role="menuitem"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setBrandOpen(false)}
+              >
+                <GamepadIcon />
+                <span>
+                  <strong>Unblocked games</strong>
+                  <small>Open math_games in a new tab</small>
+                </span>
+              </a>
+            </div>
+          ) : null}
+        </div>
 
         {/* Center: Search input with / shortcut */}
         <div className="nav-search-container">
@@ -130,15 +225,11 @@ export default function Header({
               name="q"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape" && query) {
-                  e.preventDefault();
-                  onClear();
-                }
-              }}
-              placeholder="search infinite amount of titles"
+              onKeyDown={handleSearchEscape}
+              placeholder="Search titles…"
               autoComplete="off"
               spellCheck={false}
+              enterKeyHint="search"
               className="nav-search-input"
             />
             {query ? (
@@ -180,10 +271,22 @@ export default function Header({
             ) : null}
           </button>
 
+          {/* Search toggle (small screens) */}
+          <button
+            type="button"
+            className="nav-icon-btn nav-search-toggle"
+            title={searchVisible ? "Hide search" : "Search titles"}
+            aria-label={searchVisible ? "Hide search" : "Search titles"}
+            aria-expanded={searchVisible}
+            onClick={() => setSearchOpen((open) => !open)}
+          >
+            {searchVisible ? <XIcon /> : <SearchIcon />}
+          </button>
+
           {/* Share Button */}
           <button
             type="button"
-            className="nav-icon-btn"
+            className="nav-icon-btn nav-share-btn"
             title="Share streaming"
             aria-label="Share"
             onClick={handleShare}
