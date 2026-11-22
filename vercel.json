@@ -5,6 +5,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/script/:path*",
+      "destination": "/api/adcash/script/:path*"
+    },
+    {
       "source": "/embed/:path*",
       "destination": "/api/embed/:path*"
     },
