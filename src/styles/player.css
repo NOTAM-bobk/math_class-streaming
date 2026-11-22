@@ -100,6 +100,10 @@
   min-width: 0;
 }
 
+.player-more {
+  margin-top: 34px;
+}
+
 .episodes-head {
   display: flex;
   align-items: center;

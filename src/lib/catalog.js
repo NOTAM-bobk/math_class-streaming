@@ -88,6 +88,54 @@ export const catalog = {
       .map((entry) => entry.meta);
   },
 
+  // Neighbours for the "More like this" shelf: the title's genres first, then
+  // the rest of its format, then a few of the other format for variety.
+  async related(meta, limit = 14) {
+    const type = meta?.type === "series" ? "series" : "movie";
+    const other = type === "series" ? "movie" : "series";
+    const genres = Array.isArray(meta?.genres)
+      ? [...new Set(meta.genres.filter(Boolean))].slice(0, 2)
+      : [];
+
+    const queries = [
+      ...genres.map((genre) => ({ type, catalog: "top", genre })),
+      { type, catalog: "top" },
+      ...genres.map((genre) => ({ type: other, catalog: "top", genre })),
+      { type: other, catalog: "top" },
+    ];
+
+    const results = await Promise.allSettled(
+      queries.map((query) => this.browse(query))
+    );
+    if (results.every((result) => result.status === "rejected")) {
+      throw new Error("More like this is unavailable");
+    }
+
+    const currentKey = `${type}-${String(meta?.id || meta?.imdb_id || "")}`;
+    const seen = new Set([currentKey]);
+    const pools = { [type]: [], [other]: [] };
+
+    results.forEach((result, index) => {
+      if (result.status !== "fulfilled") return;
+      const pool = pools[queries[index].type];
+      const metas = Array.isArray(result.value?.metas) ? result.value.metas : [];
+      for (const item of metas) {
+        if (!item?.id || !item?.name) continue;
+        const key = `${item.type || queries[index].type}-${item.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pool.push(item);
+      }
+    });
+
+    const picks = pools[type].slice(0, Math.ceil(limit * 0.75));
+    picks.push(...pools[other].slice(0, limit - picks.length));
+    if (picks.length < limit) {
+      picks.push(...pools[type].slice(picks.length, limit));
+    }
+    return picks.slice(0, limit);
+  },
+
   async search(query) {
     const term = encodeURIComponent(query.trim());
     const results = await Promise.allSettled([
