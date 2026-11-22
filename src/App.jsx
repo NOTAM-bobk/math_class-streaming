@@ -291,29 +291,6 @@ export default function App() {
     [clearSearch]
   );
 
-  const playRandom = useCallback(async () => {
-    try {
-      const topMovies = await catalog.browse({ type: "movie", catalog: "top" });
-      const metas = topMovies?.metas || [];
-      if (metas.length > 0) {
-        const pick = metas[Math.floor(Math.random() * metas.length)];
-        openPlayer(pick, true);
-        return;
-      }
-    } catch {}
-
-    const candidateRow = ROWS[Math.floor(Math.random() * ROWS.length)];
-    if (candidateRow) {
-      try {
-        const res = await catalog.browse(candidateRow);
-        const metas = res?.metas || [];
-        if (metas.length) {
-          openPlayer(metas[Math.floor(Math.random() * metas.length)], true);
-        }
-      } catch {}
-    }
-  }, [openPlayer]);
-
   const applyLocation = useCallback(async () => {
     const parsed = parseTitlePath(window.location.pathname);
     if (!parsed) {
@@ -377,7 +354,6 @@ export default function App() {
         onQueryChange={setInput}
         onSubmit={submitSearch}
         onClear={clearSearch}
-        onRandom={playRandom}
         onHome={goHome}
         recentCount={recent.length}
         onClearRecent={clearRecent}
