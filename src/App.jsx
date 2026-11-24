@@ -11,7 +11,7 @@ import { catalog } from "./lib/catalog.js";
 import { GAMES_URL, HERO, ROWS } from "./lib/constants.js";
 import { relativeTime } from "./lib/format.js";
 import { readHistory, recordHistory, writeHistory } from "./lib/history.js";
-import { parseSearchPath, parseTitlePath, searchPath, titlePath } from "./lib/routes.js";
+import { parseTitlePath, titlePath } from "./lib/routes.js";
 import {
   clearProgress as clearAllProgress,
   readProgress,
@@ -33,10 +33,7 @@ export default function App() {
   const [input, setInput] = useState("");
   const [search, setSearch] = useState(null);
   const [player, setPlayer] = useState(null);
-  const [heroes, setHeroes] = useState([]);
-  const [heroStatus, setHeroStatus] = useState("loading");
-  const [heroIndex, setHeroIndex] = useState(0);
-  const [heroPaused, setHeroPaused] = useState(false);
+  const [hero, setHero] = useState({ status: "loading", meta: null });
   const [recent, setRecent] = useState(readHistory);
   const [watchlist, setWatchlist] = useState(readWatchlist);
   const [progress, setProgress] = useState(readProgress);
@@ -91,48 +88,18 @@ export default function App() {
 
   useEffect(() => {
     let alive = true;
-    const load = async () => {
-      try {
-        const { meta } = await catalog.meta(HERO.type, HERO.id);
-        if (!alive) return;
-        if (meta?.id) {
-          setHeroes([meta]);
-          setHeroStatus("ready");
-        }
-      } catch {
-        if (alive) setHeroStatus("error");
-      }
-
-      try {
-        const more = await catalog.spotlight(6);
-        if (!alive || !more.length) return;
-        setHeroes((prev) => {
-          const seen = new Set(prev.map((item) => item.id));
-          return [...prev, ...more.filter((item) => !seen.has(item.id))];
-        });
-        setHeroStatus("ready");
-      } catch {
-        // The single featured title still shows.
-      }
-    };
-    load();
+    catalog
+      .meta(HERO.type, HERO.id)
+      .then(({ meta }) => {
+        if (alive) setHero({ status: "ready", meta });
+      })
+      .catch(() => {
+        if (alive) setHero({ status: "error", meta: null });
+      });
     return () => {
       alive = false;
     };
   }, []);
-
-  // Rotate the billboard through the featured films and series, unless the
-  // visitor is reading it or has asked their system for less motion.
-  useEffect(() => {
-    if (heroes.length < 2 || heroPaused) return undefined;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
-      return undefined;
-    }
-    const timer = window.setInterval(() => {
-      setHeroIndex((index) => (index + 1) % heroes.length);
-    }, 9000);
-    return () => window.clearInterval(timer);
-  }, [heroes.length, heroPaused]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -288,7 +255,11 @@ export default function App() {
       setView("browse");
       setInput(query);
       setSearch({ query, status: "loading", items: [], message: "Searching…" });
-      window.history.replaceState(null, "", searchPath(query));
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}?q=${encodeURIComponent(query)}`
+      );
       window.scrollTo(0, 0);
 
       const token = searchToken.current + 1;
@@ -320,15 +291,35 @@ export default function App() {
     [clearSearch]
   );
 
+  const playRandom = useCallback(async () => {
+    try {
+      const topMovies = await catalog.browse({ type: "movie", catalog: "top" });
+      const metas = topMovies?.metas || [];
+      if (metas.length > 0) {
+        const pick = metas[Math.floor(Math.random() * metas.length)];
+        openPlayer(pick, true);
+        return;
+      }
+    } catch {}
+
+    const candidateRow = ROWS[Math.floor(Math.random() * ROWS.length)];
+    if (candidateRow) {
+      try {
+        const res = await catalog.browse(candidateRow);
+        const metas = res?.metas || [];
+        if (metas.length) {
+          openPlayer(metas[Math.floor(Math.random() * metas.length)], true);
+        }
+      } catch {}
+    }
+  }, [openPlayer]);
+
   const applyLocation = useCallback(async () => {
     const parsed = parseTitlePath(window.location.pathname);
     if (!parsed) {
       setPlayer(null);
       document.title = "math_class:network";
-      // /q/<query> is canonical; older ?q= links still resolve.
-      const query =
-        parseSearchPath(window.location.pathname) ||
-        new URLSearchParams(window.location.search).get("q");
+      const query = new URLSearchParams(window.location.search).get("q");
       if (query) submitSearch(query);
       else setSearch(null);
       return;
@@ -373,11 +364,6 @@ export default function App() {
   const visibleRows =
     filter === "all" ? ROWS : ROWS.filter((row) => row.type === filter);
 
-  const hero = {
-    status: heroes.length ? "ready" : heroStatus,
-    meta: heroes.length ? heroes[heroIndex % heroes.length] : null,
-  };
-
   return (
     <>
       <a className="skip-link" href="#main">
@@ -391,6 +377,7 @@ export default function App() {
         onQueryChange={setInput}
         onSubmit={submitSearch}
         onClear={clearSearch}
+        onRandom={playRandom}
         onHome={goHome}
         recentCount={recent.length}
         onClearRecent={clearRecent}
@@ -411,11 +398,11 @@ export default function App() {
           meta={player.meta}
           autoplay={player.autoplay}
           onBack={closePlayer}
-          onOpen={openPlayer}
           saved={saved(player.meta)}
           onToggleSave={toggleSave}
           settings={settings}
           onProgressSaved={refreshProgress}
+          onPickSource={(id) => updateSetting("source", id)}
         />
       ) : search ? (
         <SearchResults
@@ -423,30 +410,35 @@ export default function App() {
           onOpen={openPlayer}
           onClear={clearSearch}
           onRetry={() => submitSearch(search.query)}
+          isSaved={saved}
+          onToggleSave={toggleSave}
           progressFor={progressFor}
         />
       ) : view === "watchlist" ? (
         <WatchlistView
           items={watchlist}
           onOpen={openPlayer}
+          onToggleSave={toggleSave}
           onBrowse={browse}
           progressFor={progressFor}
         />
       ) : (
         <main id="main" className="view-enter">
           <Hero
-            key={hero.meta?.id || "hero"}
             meta={hero.meta}
             status={hero.status}
+            saved={saved(hero.meta)}
             onPlay={(meta) => openPlayer(meta, true)}
             onDetails={(meta) => openPlayer(meta, false)}
-            onHoverChange={setHeroPaused}
+            onToggleSave={toggleSave}
           />
           <div className="rows">
             {filter === "all" ? (
               <TopTen
                 index={0}
                 onOpen={openPlayer}
+                isSaved={saved}
+                onToggleSave={toggleSave}
                 progressFor={progressFor}
               />
             ) : null}
@@ -456,6 +448,8 @@ export default function App() {
                 title="Recently watched"
                 items={recent}
                 onOpen={openPlayer}
+                isSaved={saved}
+                onToggleSave={toggleSave}
                 progressFor={progressFor}
                 index={1}
                 metaText={(item) => `Watched ${relativeTime(item.watchedAt)}`}
@@ -478,6 +472,8 @@ export default function App() {
                 note={row.note}
                 def={row}
                 onOpen={openPlayer}
+                isSaved={saved}
+                onToggleSave={toggleSave}
                 progressFor={progressFor}
                 index={index + (filter === "all" ? 2 : 1)}
               />
