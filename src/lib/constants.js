@@ -1,4 +1,5 @@
 export const GAMES_URL = "https://poly2.benlaunches.icu";
+export const CHAT_URL = "https://chat.mathclass.uk";
 export const PANIC_URL = "https://classroom.google.com/";
 
 export const HERO = { type: "movie", id: "tt1375666" };

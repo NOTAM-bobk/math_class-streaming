@@ -1,13 +1,27 @@
 const API = "https://v3-cinemeta.strem.io";
 
-async function request(path) {
-  const response = await fetch(`${API}${path}`, {
+// Rows and shelves often ask for the same catalog; share one request per path
+// and drop failed entries so a retry can try again.
+const inflight = new Map();
+
+function request(path) {
+  const cached = inflight.get(path);
+  if (cached) return cached;
+  const pending = fetch(`${API}${path}`, {
     headers: { accept: "application/json" },
-  });
-  if (!response.ok) {
-    throw new Error(`Cinemeta responded ${response.status}`);
-  }
-  return response.json();
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Cinemeta responded ${response.status}`);
+      }
+      return response.json();
+    })
+    .catch((error) => {
+      inflight.delete(path);
+      throw error;
+    });
+  inflight.set(path, pending);
+  return pending;
 }
 
 function scoreOf(meta) {

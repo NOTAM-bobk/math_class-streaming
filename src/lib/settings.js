@@ -15,7 +15,7 @@ export const DEFAULT_SETTINGS = {
   rememberProgress: true,
   reduceMotion: false,
   playerTheme: "amber",
-  source: "vidfast",
+  source: "cinesrc",
 };
 
 export function readSettings() {
