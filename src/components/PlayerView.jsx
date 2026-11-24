@@ -83,7 +83,7 @@ export default function PlayerView({
   const [resumeAt, setResumeAt] = useState(0);
   const [copied, setCopied] = useState(false);
   const [sourceId, setSourceId] = useState(() =>
-    SOURCE_IDS.includes(settings?.source) ? settings.source : "vidfast"
+    SOURCE_IDS.includes(settings?.source) ? settings.source : "cinesrc"
   );
   const [failedSources, setFailedSources] = useState([]);
   const [sourceNotice, setSourceNotice] = useState("");
@@ -464,6 +464,22 @@ export default function PlayerView({
         </div>
       </div>
 
+      <div className="player-heading">
+        <p className="player-kicker">
+          {[
+            isSeries ? "Series" : "Film",
+            meta.releaseInfo || meta.year,
+            isSeries && seasons.length
+              ? `${seasons.length} season${seasons.length === 1 ? "" : "s"}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+        <h1>{meta.name}</h1>
+        <Facts meta={meta} />
+      </div>
+
       <div className="sourcebar">
         <label className="sourcebar-field">
           <span>Source</span>
@@ -538,12 +554,12 @@ export default function PlayerView({
 
       {position > 0 ? (
         <div className="player-meter">
-          <span className="player-meter-track" aria-hidden="true">
-            <span style={{ width: `${percent}%` }} />
-          </span>
           <span className="player-meter-label">
             {formatPosition(position)}
             {duration > 0 ? ` of ${formatMinutes(duration / 60)}` : " watched"}
+          </span>
+          <span className="player-meter-track" aria-hidden="true">
+            <span style={{ width: `${percent}%` }} />
           </span>
         </div>
       ) : null}
@@ -562,8 +578,6 @@ export default function PlayerView({
         }`}
       >
         <div className="player-copy">
-          <h1>{meta.name}</h1>
-          <Facts meta={meta} />
           {meta.description ? (
             <p className="overview">{meta.description}</p>
           ) : null}
