@@ -11,7 +11,7 @@ import { catalog } from "./lib/catalog.js";
 import { GAMES_URL, HERO, ROWS } from "./lib/constants.js";
 import { relativeTime } from "./lib/format.js";
 import { readHistory, recordHistory, writeHistory } from "./lib/history.js";
-import { parseTitlePath, titlePath } from "./lib/routes.js";
+import { parseSearchPath, parseTitlePath, searchPath, titlePath } from "./lib/routes.js";
 import {
   clearProgress as clearAllProgress,
   readProgress,
@@ -288,11 +288,7 @@ export default function App() {
       setView("browse");
       setInput(query);
       setSearch({ query, status: "loading", items: [], message: "Searching…" });
-      window.history.replaceState(
-        null,
-        "",
-        `${window.location.pathname}?q=${encodeURIComponent(query)}`
-      );
+      window.history.replaceState(null, "", searchPath(query));
       window.scrollTo(0, 0);
 
       const token = searchToken.current + 1;
@@ -329,7 +325,10 @@ export default function App() {
     if (!parsed) {
       setPlayer(null);
       document.title = "math_class:network";
-      const query = new URLSearchParams(window.location.search).get("q");
+      // /q/<query> is canonical; older ?q= links still resolve.
+      const query =
+        parseSearchPath(window.location.pathname) ||
+        new URLSearchParams(window.location.search).get("q");
       if (query) submitSearch(query);
       else setSearch(null);
       return;

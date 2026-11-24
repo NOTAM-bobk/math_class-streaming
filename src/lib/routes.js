@@ -31,6 +31,21 @@ export function titleUrl(meta) {
     : new URL(path, window.location.origin).toString();
 }
 
+// "/q/the-matrix" — the search term lives in the path, not a query string.
+export function searchPath(query) {
+  return `/q/${encodeURIComponent(String(query || "").trim())}`;
+}
+
+export function parseSearchPath(pathname = "/") {
+  const match = String(pathname).match(/^\/q\/(.+?)\/?$/i);
+  if (!match) return "";
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return "";
+  }
+}
+
 export function parseTitlePath(pathname = "/") {
   const match = String(pathname).match(
     /^\/(movie|series)\/([a-z0-9][a-z0-9-]*?)-([a-z0-9]+)\/?$/i

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "math-class-streaming",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-24",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // The player and ad proxies must reach the Worker even though the SPA
+    // fallback answers every other unknown path with index.html.
+    "run_worker_first": ["/embed", "/embed/*", "/api/adcash/*"]
+  }
+}
