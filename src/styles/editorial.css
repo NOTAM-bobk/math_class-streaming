@@ -157,3 +157,56 @@ body {
     justify-content: flex-start;
   }
 }
+
+/* Source picker under the player chrome */
+.sourcebar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin: 0 0 12px;
+}
+
+.sourcebar-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sourcebar-field select {
+  appearance: none;
+  height: 32px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background-color: #131316;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: right 14px top 14px, right 9px top 14px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sourcebar-field select:hover {
+  border-color: var(--line-strong);
+}
+
+.sourcebar-field select:disabled {
+  opacity: 0.55;
+}
+
+.sourcebar-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sourcebar .player-link svg {
+  width: 13px;
+  height: 13px;
+}
