@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Header from "./components/Header.jsx";
 import Hero from "./components/Hero.jsx";
-import PlayerView from "./components/PlayerView.jsx";
 import SearchResults from "./components/SearchResults.jsx";
 import Shelf from "./components/Shelf.jsx";
 import TopTen from "./components/TopTen.jsx";
@@ -26,6 +25,9 @@ import {
   readWatchlist,
   toggleWatchlist,
 } from "./lib/watchlist.js";
+
+// The player is only needed once a title opens; keep it out of the first load.
+const PlayerView = lazy(() => import("./components/PlayerView.jsx"));
 
 export default function App() {
   const [filter, setFilter] = useState("all");
@@ -98,6 +100,18 @@ export default function App() {
       });
     return () => {
       alive = false;
+    };
+  }, []);
+
+  // Warm the player chunk while the browser is idle so opening a title is instant.
+  useEffect(() => {
+    const warm = () => import("./components/PlayerView.jsx").catch(() => {});
+    const idle = window.requestIdleCallback
+      ? window.requestIdleCallback(warm, { timeout: 3000 })
+      : window.setTimeout(warm, 1200);
+    return () => {
+      if (window.cancelIdleCallback) window.cancelIdleCallback(idle);
+      window.clearTimeout(idle);
     };
   }, []);
 
@@ -394,16 +408,26 @@ export default function App() {
       />
 
       {player ? (
-        <PlayerView
-          meta={player.meta}
-          autoplay={player.autoplay}
-          onBack={closePlayer}
-          saved={saved(player.meta)}
-          onToggleSave={toggleSave}
-          settings={settings}
-          onProgressSaved={refreshProgress}
-          onPickSource={(id) => updateSetting("source", id)}
-        />
+        <Suspense
+          fallback={
+            <main id="main" className="player">
+              <p className="route-loading" role="status">
+                Loading player…
+              </p>
+            </main>
+          }
+        >
+          <PlayerView
+            meta={player.meta}
+            autoplay={player.autoplay}
+            onBack={closePlayer}
+            saved={saved(player.meta)}
+            onToggleSave={toggleSave}
+            settings={settings}
+            onProgressSaved={refreshProgress}
+            onPickSource={(id) => updateSetting("source", id)}
+          />
+        </Suspense>
       ) : search ? (
         <SearchResults
           search={search}
