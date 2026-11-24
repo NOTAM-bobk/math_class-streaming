@@ -1,3 +1,5 @@
+import { SOURCE_IDS } from "./sources.js";
+
 const SETTINGS_KEY = "math_class_streaming_settings";
 
 export const PLAYER_THEMES = [
@@ -13,6 +15,7 @@ export const DEFAULT_SETTINGS = {
   rememberProgress: true,
   reduceMotion: false,
   playerTheme: "amber",
+  source: "vidfast",
 };
 
 export function readSettings() {
@@ -40,6 +43,9 @@ export function readSettings() {
           ? parsed.reduceMotion
           : DEFAULT_SETTINGS.reduceMotion,
       playerTheme: theme,
+      source: SOURCE_IDS.includes(parsed?.source)
+        ? parsed.source
+        : DEFAULT_SETTINGS.source,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
