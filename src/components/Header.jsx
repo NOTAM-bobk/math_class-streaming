@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { GAMES_URL } from "../lib/constants.js";
+import { CHAT_URL, GAMES_URL } from "../lib/constants.js";
 import {
   BookmarkIcon,
   ChevronDown,
+  ExternalLinkIcon,
   FilmIcon,
   GamepadIcon,
   SearchIcon,
@@ -293,6 +294,18 @@ export default function Header({
           >
             <ShareIcon />
           </button>
+
+          {/* Chat */}
+          <a
+            className="nav-icon-btn nav-chat-btn"
+            href={CHAT_URL}
+            target="_blank"
+            rel="noreferrer"
+            title="Open the math_class chat"
+            aria-label="Open chat in a new tab"
+          >
+            <ExternalLinkIcon />
+          </a>
 
           {/* Settings Button */}
           <button
