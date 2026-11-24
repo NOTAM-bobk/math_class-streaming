@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { catalog } from "../lib/catalog.js";
-import { formatMinutes, formatPosition, genresOf } from "../lib/format.js";
+import { formatMinutes, formatPosition } from "../lib/format.js";
+import { directUrl, idOf, PLAYER_API } from "../lib/player.js";
 import {
-  directUrl,
-  episodeUrl,
-  idOf,
-  movieUrl,
-  PLAYER_API,
-} from "../lib/player.js";
+  SOURCES,
+  SOURCE_IDS,
+  buildSourceUrl,
+  canPlaySource,
+  sourceLabel,
+} from "../lib/sources.js";
 import {
   clearProgressEntry,
   getProgress,
@@ -16,7 +17,6 @@ import {
 } from "../lib/progress.js";
 import { themeHex } from "../lib/settings.js";
 import Facts from "./Facts.jsx";
-import Shelf from "./Shelf.jsx";
 import { titlePath } from "../lib/routes.js";
 import {
   BookmarkIcon,
@@ -49,23 +49,6 @@ function parseProgressMessage(raw) {
   };
 }
 
-// A static deploy has no "/embed" proxy, so that path resolves to the app shell
-// instead of the player. Same-origin frames are readable, so detect the shell and
-// play from VidFast directly in that case.
-function isAppShell(frame) {
-  try {
-    const doc = frame.contentDocument;
-    if (!doc) return false;
-    return Boolean(
-      doc.querySelector(
-        'meta[name="application-name"][content="math_class:network"]'
-      )
-    );
-  } catch {
-    return false;
-  }
-}
-
 function isPlayerOrigin(origin) {
   if (!origin) return false;
   if (origin === window.location.origin) return true;
@@ -78,11 +61,11 @@ export default function PlayerView({
   meta,
   autoplay,
   onBack,
-  onOpen,
   saved = false,
   onToggleSave,
   settings,
   onProgressSaved,
+  onPickSource,
 }) {
   const remember = settings?.rememberProgress !== false;
   const proxy = settings?.proxyPlayer !== false;
@@ -99,8 +82,12 @@ export default function PlayerView({
   const [duration, setDuration] = useState(0);
   const [resumeAt, setResumeAt] = useState(0);
   const [copied, setCopied] = useState(false);
-  const [related, setRelated] = useState({ status: "loading", items: [] });
-  const [relatedAttempt, setRelatedAttempt] = useState(0);
+  const [sourceId, setSourceId] = useState(() =>
+    SOURCE_IDS.includes(settings?.source) ? settings.source : "vidfast"
+  );
+  const [failedSources, setFailedSources] = useState([]);
+  const [sourceNotice, setSourceNotice] = useState("");
+  const [attempt, setAttempt] = useState(0);
 
   const iframeRef = useRef(null);
   const positionRef = useRef(0);
@@ -108,6 +95,7 @@ export default function PlayerView({
   const remoteRef = useRef(false);
   const lastPersist = useRef(0);
   const lastAppSync = useRef(0);
+  const loadedRef = useRef(false);
 
   const isSeries = meta?.type === "series";
   const id = idOf(meta);
@@ -151,14 +139,19 @@ export default function PlayerView({
     [onProgressSaved]
   );
 
+  // Reset per title; the embed URL itself is built by the source effect below,
+  // so changing sources never needs to reload the episode list.
   useEffect(() => {
     let alive = true;
+    setVideos([]);
+    setFailedSources([]);
+    setSourceNotice("");
     setReady(false);
     setError("");
-    setVideos([]);
     setPosition(0);
     setDuration(0);
     setResumeAt(0);
+    positionRef.current = 0;
     remoteRef.current = false;
 
     if (!id) {
@@ -170,18 +163,10 @@ export default function PlayerView({
       const start = remember ? resumeSeconds(getProgress(meta)) : 0;
       setResumeAt(start);
       setPosition(start);
-      setSrc(
-        movieUrl(id, {
-          autoplay: wantsAutoplay,
-          startAt: start,
-          theme,
-          proxy,
-        })
-      );
+      positionRef.current = start;
       return undefined;
     }
 
-    setSrc("");
     catalog
       .meta("series", metaId)
       .then(({ meta: full }) => {
@@ -218,14 +203,7 @@ export default function PlayerView({
         setEpisode(first.number);
         setResumeAt(start);
         setPosition(start);
-        setSrc(
-          episodeUrl(id, first.season, first.number, {
-            autoplay: wantsAutoplay,
-            startAt: start,
-            theme,
-            proxy,
-          })
-        );
+        positionRef.current = start;
       })
       .catch(() => {
         if (alive) setError("Episodes could not be loaded.");
@@ -234,37 +212,82 @@ export default function PlayerView({
     return () => {
       alive = false;
     };
+  }, [id, isSeries, meta, metaId, remember]);
+
+  useEffect(() => {
+    if (!id) return;
+    if (isSeries && (!videos.length || !season || !episode)) return;
+    const start =
+      positionRef.current > 45 ? Math.floor(positionRef.current) : resumeAt;
+    const url = buildSourceUrl({
+      source: sourceId,
+      meta,
+      season: isSeries ? season : null,
+      episode: isSeries ? episode : null,
+      startAt: start,
+      autoplay: wantsAutoplay,
+      theme,
+      proxy,
+    });
+    loadedRef.current = false;
+    setReady(false);
+    if (!url) {
+      setSourceNotice(
+        `${sourceLabel(sourceId)} cannot play this title — trying the next source.`
+      );
+      setFailedSources((prev) =>
+        prev.includes(sourceId) ? prev : [...prev, sourceId]
+      );
+      return;
+    }
+    setError("");
+    setSrc(url);
   }, [
+    attempt,
+    episode,
     id,
     isSeries,
     meta,
-    metaId,
     proxy,
-    remember,
+    resumeAt,
+    season,
+    sourceId,
     theme,
+    videos.length,
     wantsAutoplay,
   ]);
 
-  // Genre neighbours for the "More like this" shelf under the player.
+  // Walk down the list whenever the chosen source is marked broken.
   useEffect(() => {
-    let alive = true;
-    setRelated({ status: "loading", items: [] });
-    if (!meta?.id) return undefined;
+    if (!failedSources.includes(sourceId)) return;
+    const next = SOURCES.find(
+      (source) =>
+        !failedSources.includes(source.id) && canPlaySource(source, meta)
+    );
+    if (next) {
+      setSourceId(next.id);
+      return;
+    }
+    setError(
+      "No source could load this title. Pick another source or open it in a new tab."
+    );
+  }, [failedSources, meta, sourceId]);
 
-    catalog
-      .related(meta)
-      .then((items) => {
-        if (!alive) return;
-        setRelated({ status: items.length ? "ready" : "empty", items });
-      })
-      .catch(() => {
-        if (alive) setRelated({ status: "error", items: [] });
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [meta, relatedAttempt]);
+  // A cross-origin frame that never fires load counts as a dead source.
+  useEffect(() => {
+    if (!src || ready) return undefined;
+    const pending = sourceId;
+    const timer = window.setTimeout(() => {
+      if (loadedRef.current) return;
+      setSourceNotice(
+        `${sourceLabel(pending)} did not load — switching source.`
+      );
+      setFailedSources((prev) =>
+        prev.includes(pending) ? prev : [...prev, pending]
+      );
+    }, 9000);
+    return () => window.clearTimeout(timer);
+  }, [ready, sourceId, src]);
 
   useEffect(() => {
     const onMessage = (event) => {
@@ -326,19 +349,12 @@ export default function PlayerView({
   const pickEpisode = (number) => {
     const start = remember ? resumeSeconds(getProgress(meta, season, number)) : 0;
     setEpisode(number);
-    setReady(false);
     setResumeAt(start);
     setPosition(start);
+    positionRef.current = start;
     setDuration(0);
+    setReady(false);
     remoteRef.current = false;
-    setSrc(
-      episodeUrl(id, season, number, {
-        autoplay: wantsAutoplay,
-        startAt: start,
-        theme,
-        proxy,
-      })
-    );
   };
 
   const startOver = () => {
@@ -347,17 +363,39 @@ export default function PlayerView({
       isSeries ? season : undefined,
       isSeries ? episode : undefined
     );
+    positionRef.current = 0;
     setResumeAt(0);
     setPosition(0);
     setDuration(0);
     setReady(false);
     remoteRef.current = false;
-    setSrc(
-      isSeries
-        ? episodeUrl(id, season, episode, { autoplay: true, theme, proxy })
-        : movieUrl(id, { autoplay: true, theme, proxy })
-    );
+    setAttempt((value) => value + 1);
     onProgressSaved?.();
+  };
+
+  const changeSource = (next) => {
+    if (!SOURCE_IDS.includes(next)) return;
+    setSourceId(next);
+    setFailedSources((prev) => prev.filter((entry) => entry !== next));
+    setSourceNotice("");
+    setError("");
+    setReady(false);
+    loadedRef.current = false;
+    onPickSource?.(next);
+  };
+
+  const tryNextSource = () => {
+    const index = SOURCES.findIndex((source) => source.id === sourceId);
+    const order = [...SOURCES.slice(index + 1), ...SOURCES.slice(0, index)];
+    const next = order.find(
+      (source) => source.id !== sourceId && canPlaySource(source, meta)
+    );
+    if (!next) {
+      setSourceNotice("No other source can play this title.");
+      return;
+    }
+    changeSource(next.id);
+    setSourceNotice(`Trying ${next.label}.`);
   };
 
   const copyLink = async () => {
@@ -418,12 +456,43 @@ export default function PlayerView({
             target="_blank"
             rel="noreferrer"
           >
-            Open in VidFast
+            Open {sourceLabel(sourceId)} in a new tab
           </a>
           <span className="sr-only" role="status">
             {copied ? "Title link copied" : ""}
           </span>
         </div>
+      </div>
+
+      <div className="sourcebar">
+        <label className="sourcebar-field">
+          <span>Source</span>
+          <select
+            value={sourceId}
+            onChange={(event) => changeSource(event.target.value)}
+          >
+            {SOURCES.map((source) => (
+              <option
+                key={source.id}
+                value={source.id}
+                disabled={!canPlaySource(source, meta)}
+              >
+                {source.label}
+                {failedSources.includes(source.id) ? " — failed" : ""}
+                {canPlaySource(source, meta) ? "" : " — no id"}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" className="player-link" onClick={tryNextSource}>
+          <RotateIcon />
+          Try next source
+        </button>
+        {sourceNotice ? (
+          <p className="sourcebar-note" role="status">
+            {sourceNotice}
+          </p>
+        ) : null}
       </div>
 
       {resumeAt > 45 ? (
@@ -442,6 +511,7 @@ export default function PlayerView({
 
       <div className="stage">
         <iframe
+          key={`${sourceId}-${attempt}-${season}-${episode}`}
           ref={iframeRef}
           src={src || "about:blank"}
           title={`${meta.name} player${
@@ -451,17 +521,11 @@ export default function PlayerView({
           allowFullScreen
           referrerPolicy="origin"
           onLoad={(event) => {
-            const frame = event.currentTarget;
-            const loaded = frame.getAttribute("src") || "";
-            if (!loaded || loaded.includes("about:blank")) return;
-            if (isAppShell(frame)) {
-              const direct = directUrl(loaded);
-              if (direct && direct !== loaded) {
-                setSrc(direct);
-                return;
-              }
-            }
+            if (event.currentTarget.src.includes("about:blank")) return;
+            loadedRef.current = true;
             setReady(true);
+            setSourceNotice("");
+            setError("");
           }}
         />
         {status ? (
@@ -485,10 +549,11 @@ export default function PlayerView({
       ) : null}
 
       <p className="player-note">
-        {src.startsWith("/embed")
+        Playing from {sourceLabel(sourceId)}.{" "}
+        {sourceId === "vidfast" && proxy
           ? "Playback is proxied through math_class:network so it still loads on restricted networks."
-          : "Playback is embedded directly from VidFast."}{" "}
-        If it stays blank, open it in VidFast.
+          : "Playback is embedded directly from the provider."}{" "}
+        If it stays blank, try the next source.
       </p>
 
       <div
@@ -552,19 +617,6 @@ export default function PlayerView({
           </aside>
         ) : null}
       </div>
-
-      {onOpen && related.status !== "empty" ? (
-        <div className="player-more">
-          <Shelf
-            title="More like this"
-            note={genresOf(meta).slice(0, 2).join(" · ")}
-            items={related.items}
-            status={related.status}
-            onOpen={onOpen}
-            onRetry={() => setRelatedAttempt((value) => value + 1)}
-          />
-        </div>
-      ) : null}
     </main>
   );
 }
