@@ -58,7 +58,7 @@ export default function Hero({
         <div className="billboard-body">
           <p className="hero-eyebrow">
             <span className="hero-dot" aria-hidden="true" />
-            Featured {meta?.type === "series" ? "series" : "film"} · tonight
+            Featured {meta?.type === "series" ? "series" : "film"} tonight
           </p>
 
           <h1 id="hero-title">{meta?.name || "Catalog unavailable"}</h1>

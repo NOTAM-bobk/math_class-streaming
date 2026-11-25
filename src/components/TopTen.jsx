@@ -68,7 +68,6 @@ export default function TopTen({ onOpen, progressFor, index = 0 }) {
           <p className="row-note">Trending right now · {today}</p>
         </div>
         <div className="shelf-actions">
-          <span className="rank-pill">Live</span>
           <button
             type="button"
             className="arrow"
