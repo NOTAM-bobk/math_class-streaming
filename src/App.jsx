@@ -426,6 +426,7 @@ export default function App() {
             settings={settings}
             onProgressSaved={refreshProgress}
             onPickSource={(id) => updateSetting("source", id)}
+            onOpen={openPlayer}
           />
         </Suspense>
       ) : search ? (
