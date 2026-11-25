@@ -498,6 +498,63 @@
   color: var(--text);
 }
 
+/* Hero rotation dots ------------------------------------------------------ */
+
+.hero-dots {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 16px 0 0 -5px;
+}
+
+.hero-page-dot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.hero-page-dot span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.32);
+  transition: width 180ms var(--ease), background 180ms var(--ease);
+}
+.hero-page-dot:hover span {
+  background: rgba(255, 255, 255, 0.6);
+}
+.hero-page-dot.is-active span {
+  width: 18px;
+  background: var(--accent);
+}
+
+/* Settings sheet --------------------------------------------------------- */
+
+.settings-layer {
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.settings-sheet {
+  height: auto;
+  max-height: min(84dvh, 780px);
+  border-radius: 16px;
+}
+
+@media (max-width: 560px) {
+  .settings-layer {
+    padding: 12px;
+  }
+  .settings-sheet {
+    max-height: 88dvh;
+  }
+}
+
 /* Small screens ---------------------------------------------------------- */
 
 @media (max-width: 720px) {
