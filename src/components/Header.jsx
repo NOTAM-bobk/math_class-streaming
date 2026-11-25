@@ -6,6 +6,7 @@ import {
   ExternalLinkIcon,
   FilmIcon,
   GamepadIcon,
+  MessageIcon,
   SearchIcon,
   SettingsIcon,
   ShareIcon,
@@ -14,6 +15,7 @@ import {
 } from "./Icons.jsx";
 import { triggerPanic, usePanicShortcut } from "./PanicButton.jsx";
 import SettingsModal from "./SettingsModal.jsx";
+import ShareDialog from "./ShareDialog.jsx";
 
 export default function Header({
   filter = "all",
@@ -39,11 +41,12 @@ export default function Header({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [brandOpen, setBrandOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [share, setShare] = useState(null);
 
   const searchRef = useRef(null);
   const brandRef = useRef(null);
   const brandButtonRef = useRef(null);
+  const brandItemRef = useRef(null);
 
   // Global panic shortcut ']'
   usePanicShortcut();
@@ -72,6 +75,7 @@ export default function Header({
   // Brand menu: dismiss on outside press or Escape.
   useEffect(() => {
     if (!brandOpen) return undefined;
+    brandItemRef.current?.focus();
     const onPointerDown = (event) => {
       if (brandRef.current && !brandRef.current.contains(event.target)) {
         setBrandOpen(false);
@@ -105,29 +109,11 @@ export default function Header({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    const shareData = {
-      title: "math_class:network",
-      text: "Watch movies & TV shows on math_class:network",
-      url,
-    };
-    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-      try {
-        await navigator.share(shareData);
-        return;
-      } catch (err) {
-        if (err.name === "AbortError") return;
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setToast("Link copied to clipboard!");
-      setTimeout(() => setToast(null), 2500);
-    } catch {
-      setToast("Failed to copy link");
-      setTimeout(() => setToast(null), 2500);
-    }
+  const openShare = () => {
+    setShare({
+      url: window.location.href,
+      title: document.title.replace(/\s+—\s+math_class:network$/, "").trim(),
+    });
   };
 
   const handleSearchSubmit = (e) => {
@@ -159,50 +145,86 @@ export default function Header({
             ref={brandButtonRef}
             className={`nav-brand-pill${brandOpen ? " is-open" : ""}`}
             aria-expanded={brandOpen}
-            aria-haspopup="menu"
-            aria-controls="nav-brand-menu"
-            title="Switch between unblocked movies and games"
+            aria-controls="nav-sites-menu"
+            title="Switch between math_class sites"
             onClick={handleBrandToggle}
           >
-            math_class:network
+            <span className="nav-brand-word">
+              math_class<span className="nav-brand-colon">:</span>network
+            </span>
             <ChevronDown />
           </button>
 
           {brandOpen ? (
-            <div
-              id="nav-brand-menu"
-              className="nav-dropdown nav-brand-menu"
-              role="menu"
-              aria-label="math_class network"
+            <nav
+              id="nav-sites-menu"
+              className="nav-sites-menu"
+              aria-label="math_class sites"
             >
-              <a
-                className="nav-brand-item"
-                href="/"
-                role="menuitem"
-                aria-current="page"
-                onClick={goMovies}
-              >
-                <FilmIcon />
-                <span>
-                  <strong>Unblocked movies</strong>
-                  <small>You're on the movies site</small>
-                </span>
-              </a>
-              <a
-                className="nav-brand-item"
-                href={GAMES_URL}
-                role="menuitem"
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => setBrandOpen(false)}
-              >
-                <GamepadIcon />
-                <span>
-                  <strong>Unblocked games</strong>
-                  <small>Open math_games in a new tab</small>
-                </span>
-              </a>
-            </div>
+              <p className="nav-sites-label">Sites</p>
+              <ul className="nav-sites">
+                <li>
+                  <a
+                    ref={brandItemRef}
+                    className="nav-site is-current"
+                    href="/"
+                    aria-current="page"
+                    onClick={goMovies}
+                  >
+                    <span className="nav-site-icon">
+                      <FilmIcon />
+                    </span>
+                    <span className="nav-site-copy">
+                      <strong>Movies</strong>
+                      <small>Films and series</small>
+                    </span>
+                    <span className="nav-site-mark">Current</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className="nav-site"
+                    href={GAMES_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setBrandOpen(false)}
+                  >
+                    <span className="nav-site-icon">
+                      <GamepadIcon />
+                    </span>
+                    <span className="nav-site-copy">
+                      <strong>Games</strong>
+                      <small>Unblocked browser games</small>
+                    </span>
+                    <span className="nav-site-mark" aria-hidden="true">
+                      <ExternalLinkIcon />
+                    </span>
+                    <span className="sr-only">Opens in a new tab</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className="nav-site"
+                    href={CHAT_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setBrandOpen(false)}
+                  >
+                    <span className="nav-site-icon">
+                      <MessageIcon />
+                    </span>
+                    <span className="nav-site-copy">
+                      <strong>Chat</strong>
+                      <small>The network's chat room</small>
+                    </span>
+                    <span className="nav-site-mark" aria-hidden="true">
+                      <ExternalLinkIcon />
+                    </span>
+                    <span className="sr-only">Opens in a new tab</span>
+                  </a>
+                </li>
+              </ul>
+            </nav>
           ) : null}
         </div>
 
@@ -288,24 +310,12 @@ export default function Header({
           <button
             type="button"
             className="nav-icon-btn nav-share-btn"
-            title="Share streaming"
-            aria-label="Share"
-            onClick={handleShare}
+            title="Share this page"
+            aria-label="Share this page"
+            onClick={openShare}
           >
             <ShareIcon />
           </button>
-
-          {/* Chat */}
-          <a
-            className="nav-icon-btn nav-chat-btn"
-            href={CHAT_URL}
-            target="_blank"
-            rel="noreferrer"
-            title="Open the math_class chat"
-            aria-label="Open chat in a new tab"
-          >
-            <ExternalLinkIcon />
-          </a>
 
           {/* Settings Button */}
           <button
@@ -333,12 +343,12 @@ export default function Header({
         </div>
       </div>
 
-      {/* Toast Feedback */}
-      {toast && (
-        <div className="nav-toast" role="status">
-          <span>{toast}</span>
-        </div>
-      )}
+      <ShareDialog
+        open={Boolean(share)}
+        onClose={() => setShare(null)}
+        url={share?.url || ""}
+        title={share?.title || "math_class:network"}
+      />
 
       {/* Settings Modal */}
       <SettingsModal
