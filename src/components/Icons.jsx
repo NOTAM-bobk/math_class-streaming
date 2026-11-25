@@ -126,6 +126,23 @@ export function ShuffleIcon() {
   );
 }
 
+export function MessageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.3 9.3 0 0 1-2.8-.4L4 21l1.5-4.5a8.2 8.2 0 0 1-1.5-5A8.4 8.4 0 0 1 12.5 3a8.4 8.4 0 0 1 8.5 8.5z" />
+    </svg>
+  );
+}
+
+export function CopyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M15 5.5A2.5 2.5 0 0 0 12.5 3h-7A2.5 2.5 0 0 0 3 5.5v7A2.5 2.5 0 0 0 5.5 15" />
+    </svg>
+  );
+}
+
 export function ExternalLinkIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
