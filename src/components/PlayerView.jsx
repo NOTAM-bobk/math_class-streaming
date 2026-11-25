@@ -17,6 +17,7 @@ import {
 } from "../lib/progress.js";
 import { themeHex } from "../lib/settings.js";
 import Facts from "./Facts.jsx";
+import Shelf from "./Shelf.jsx";
 import { titlePath } from "../lib/routes.js";
 import {
   BookmarkIcon,
@@ -66,6 +67,8 @@ export default function PlayerView({
   settings,
   onProgressSaved,
   onPickSource,
+  onOpen,
+  progressFor,
 }) {
   const remember = settings?.rememberProgress !== false;
   const proxy = settings?.proxyPlayer !== false;
@@ -88,6 +91,8 @@ export default function PlayerView({
   const [failedSources, setFailedSources] = useState([]);
   const [sourceNotice, setSourceNotice] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [related, setRelated] = useState({ status: "loading", items: [] });
+  const [relatedAttempt, setRelatedAttempt] = useState(0);
 
   const iframeRef = useRef(null);
   const positionRef = useRef(0);
@@ -410,7 +415,51 @@ export default function PlayerView({
     }
   };
 
+  useEffect(() => {
+    if (!meta?.id) return undefined;
+    let alive = true;
+    setRelated({ status: "loading", items: [] });
+    catalog
+      .related(meta, 14)
+      .then((items) => {
+        if (!alive) return;
+        setRelated({ status: items.length ? "ready" : "empty", items });
+      })
+      .catch(() => {
+        if (alive) setRelated({ status: "error", items: [] });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [meta, relatedAttempt]);
+
   if (!meta) return null;
+
+  const dateLabel = (() => {
+    if (meta.releaseInfo) return meta.releaseInfo;
+    const released = meta.released ? new Date(meta.released) : null;
+    if (released && !Number.isNaN(released.getTime())) {
+      return released.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    }
+    return "";
+  })();
+
+  const people = (value) => {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    return value ? [String(value)] : [];
+  };
+  const details = [
+    { label: "Director", values: people(meta.director || meta.directors) },
+    { label: "Writer", values: people(meta.writer || meta.writers) },
+    { label: "Cast", values: people(meta.cast || meta.actors).slice(0, 6) },
+  ]
+    .filter((item) => item.values.length > 0)
+    .map((item) => ({ label: item.label, value: item.values.join(", ") }));
+  if (meta.awards) details.push({ label: "Awards", value: meta.awards });
 
   const status = error
     ? error
@@ -425,11 +474,26 @@ export default function PlayerView({
 
   return (
     <main id="main" className="player">
-      <div className="player-top">
-        <button type="button" className="btn btn-quiet btn-sm" onClick={onBack}>
+      <div className="player-head">
+        <button
+          type="button"
+          className="player-back"
+          onClick={onBack}
+          aria-label="Back to browse"
+          title="Back to browse"
+        >
           <ChevronLeft />
-          Back to browse
         </button>
+
+        <div className="player-heading">
+          <h1>{meta.name}</h1>
+          <p className="player-kicker">
+            {[isSeries ? "Series" : "Film", dateLabel]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+
         <div className="player-actions">
           {onToggleSave ? (
             <button
@@ -464,22 +528,6 @@ export default function PlayerView({
         </div>
       </div>
 
-      <div className="player-heading">
-        <p className="player-kicker">
-          {[
-            isSeries ? "Series" : "Film",
-            meta.releaseInfo || meta.year,
-            isSeries && seasons.length
-              ? `${seasons.length} season${seasons.length === 1 ? "" : "s"}`
-              : "",
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-        <h1>{meta.name}</h1>
-        <Facts meta={meta} />
-      </div>
-
       <div className="sourcebar">
         <label className="sourcebar-field">
           <span>Source</span>
@@ -510,6 +558,14 @@ export default function PlayerView({
           </p>
         ) : null}
       </div>
+
+      <p className="player-note">
+        Playing from {sourceLabel(sourceId)}.{" "}
+        {sourceId === "vidfast" && proxy
+          ? "Playback is proxied through math_class:network so it still loads on restricted networks."
+          : "Playback is embedded directly from the provider."}{" "}
+        If it stays blank, try the next source.
+      </p>
 
       {resumeAt > 45 ? (
         <div className="player-resume" role="status">
@@ -564,22 +620,27 @@ export default function PlayerView({
         </div>
       ) : null}
 
-      <p className="player-note">
-        Playing from {sourceLabel(sourceId)}.{" "}
-        {sourceId === "vidfast" && proxy
-          ? "Playback is proxied through math_class:network so it still loads on restricted networks."
-          : "Playback is embedded directly from the provider."}{" "}
-        If it stays blank, try the next source.
-      </p>
-
       <div
         className={`player-info${
           isSeries && seasonEpisodes.length ? "" : " is-single"
         }`}
       >
         <div className="player-copy">
+          <Facts meta={meta} hideYear />
+
           {meta.description ? (
             <p className="overview">{meta.description}</p>
+          ) : null}
+
+          {details.length > 0 ? (
+            <dl className="player-extras">
+              {details.map((item) => (
+                <div key={item.label}>
+                  <dt>{item.label}</dt>
+                  <dd>{item.value}</dd>
+                </div>
+              ))}
+            </dl>
           ) : null}
         </div>
 
@@ -630,6 +691,19 @@ export default function PlayerView({
             </ul>
           </aside>
         ) : null}
+      </div>
+
+      <div className="player-more">
+        <Shelf
+          title="More like this"
+          items={related.items}
+          status={related.status}
+          emptyMessage="No similar titles were found."
+          onOpen={onOpen}
+          onRetry={() => setRelatedAttempt((value) => value + 1)}
+          progressFor={progressFor}
+          index={1}
+        />
       </div>
     </main>
   );

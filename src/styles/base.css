@@ -115,15 +115,18 @@ svg {
    Top Navigation Bar (3D Panel Style matching reference)
    -------------------------------------------------------------------------- */
 
+/* The header sits directly on the page background and frosts whatever scrolls
+   underneath it, rather than floating as an opaque rounded panel. */
 .nav-wrapper {
   position: sticky;
   top: 0;
   z-index: 40;
   width: 100%;
-  padding: 8px var(--page-x) 4px;
-  background: linear-gradient(180deg, rgba(8, 8, 10, 0.95) 0%, rgba(8, 8, 10, 0.75) 80%, transparent 100%);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  padding: 0 var(--page-x);
+  background: rgba(8, 8, 10, 0.55);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
 }
 
 .solid-3d-panel {
@@ -133,12 +136,12 @@ svg {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  min-height: 52px;
-  padding: 6px 14px;
-  background: #1d1d1d;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  min-height: 64px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .nav-brand-pill {
@@ -784,7 +787,7 @@ svg {
 @media (max-width: 639px) {
   .solid-3d-panel {
     flex-wrap: wrap;
-    padding: 8px 10px;
+    padding: 6px 0;
     gap: 8px;
   }
   .nav-brand-pill {
@@ -1260,4 +1263,3 @@ svg {
 .sk-line.short {
   width: 58%;
 }
-

@@ -97,8 +97,8 @@ body {
 }
 
 .solid-3d-panel {
-  background: #141416;
-  border-color: rgba(255, 255, 255, 0.09);
+  background: transparent;
+  border-color: transparent;
   box-shadow: none;
 }
 

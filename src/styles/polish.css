@@ -5,7 +5,7 @@
 
 :root {
   color-scheme: dark;
-  --nav-h: 56px;
+  --nav-h: 64px;
 }
 
 /* Base hygiene ----------------------------------------------------------- */
@@ -205,18 +205,18 @@ button {
 @media (max-width: 720px) {
   :root {
     --page-x: 14px;
-    --nav-h: 50px;
+    --nav-h: 64px;
   }
 
   /* One thin bar: brand + actions, search drops in only when asked for. */
   .nav-wrapper {
-    padding: 6px var(--page-x) 4px;
+    padding: 6px var(--page-x);
   }
   .solid-3d-panel {
-    min-height: 44px;
-    padding: 4px 8px;
+    min-height: 52px;
+    padding: 0;
     gap: 6px 8px;
-    border-radius: 13px;
+    border-radius: 0;
     align-items: center;
   }
   .nav-brand-wrap {

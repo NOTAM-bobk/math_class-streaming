@@ -1,6 +1,6 @@
 import { formatRuntime, genresOf, runtimeOf, yearOf } from "../lib/format.js";
 
-export default function Facts({ meta }) {
+export default function Facts({ meta, hideYear = false }) {
   if (!meta) return null;
 
   const rating = meta.imdbRating;
@@ -18,7 +18,7 @@ export default function Facts({ meta }) {
           <span>IMDb</span>
         </span>
       ) : null}
-      {year ? <span>{year}</span> : null}
+      {!hideYear && year ? <span>{year}</span> : null}
       {runtime ? <span>{runtime}</span> : null}
       {genres.length > 0 ? <span>{genres.join(", ")}</span> : null}
     </div>

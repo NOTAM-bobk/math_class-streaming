@@ -7,6 +7,57 @@
   animation: enter 200ms var(--ease) both;
 }
 
+.player-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.player-back {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    background 150ms var(--ease),
+    border-color 150ms var(--ease),
+    transform 150ms var(--ease);
+}
+.player-back:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.32);
+  transform: translateX(-2px);
+}
+.player-back svg {
+  width: 20px;
+  height: 20px;
+}
+
+.player-head .player-heading {
+  flex: 1 1 260px;
+  min-width: 0;
+  gap: 4px;
+  margin: 0;
+}
+.player-head .player-heading h1 {
+  max-width: none;
+  font-size: clamp(26px, 3.6vw, 46px);
+  overflow-wrap: anywhere;
+}
+.player-head .player-actions {
+  flex: none;
+  margin-left: auto;
+}
+
 .player-top {
   display: flex;
   align-items: center;
@@ -62,6 +113,10 @@
   color: var(--muted-2);
 }
 
+.sourcebar + .player-note {
+  margin: 0 0 12px;
+}
+
 .player-info {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
@@ -74,6 +129,32 @@
 }
 .player-info.is-single .player-copy {
   max-width: 760px;
+}
+
+.player-copy .facts {
+  margin: 0 0 16px;
+}
+
+.player-extras {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+}
+.player-extras div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 14px;
+}
+.player-extras dt {
+  color: var(--muted-2);
+}
+.player-extras dd {
+  margin: 0;
+  color: #cfcbc5;
+  line-height: 1.5;
 }
 
 .player-copy h1 {
@@ -388,8 +469,24 @@
   .player {
     padding: 14px var(--page-x) 48px;
   }
-  .player-top {
-    margin-bottom: 10px;
+  .player-head {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .player-head .player-heading {
+    flex-basis: calc(100% - 56px);
+  }
+  .player-head .player-heading h1 {
+    font-size: clamp(24px, 7vw, 34px);
+  }
+  .player-head .player-actions {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+  .player-back {
+    width: 40px;
+    height: 40px;
   }
   .player-info {
     margin-top: 22px;

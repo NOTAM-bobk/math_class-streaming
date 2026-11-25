@@ -23,6 +23,7 @@ export default function Hero({
       <div className="billboard-media" aria-hidden="true">
         {image ? (
           <img
+            key={image}
             src={image}
             alt=""
             width="1280"
@@ -55,7 +56,7 @@ export default function Hero({
           </span>
         </div>
       ) : (
-        <div className="billboard-body">
+        <div className="billboard-body" key={meta?.id || "hero"}>
           <p className="hero-eyebrow">
             <span className="hero-dot" aria-hidden="true" />
             Featured {meta?.type === "series" ? "series" : "film"} · tonight

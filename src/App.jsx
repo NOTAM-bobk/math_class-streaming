@@ -36,7 +36,11 @@ export default function App() {
   const [input, setInput] = useState("");
   const [search, setSearch] = useState(null);
   const [player, setPlayer] = useState(null);
-  const [hero, setHero] = useState({ status: "loading", meta: null });
+  const [hero, setHero] = useState({
+    status: "loading",
+    meta: null,
+    pool: [],
+  });
   const [recent, setRecent] = useState(readHistory);
   const [watchlist, setWatchlist] = useState(readWatchlist);
   const [progress, setProgress] = useState(readProgress);
@@ -89,20 +93,49 @@ export default function App() {
     };
   }, []);
 
+  // The billboard cycles through a small mixed pool of films and series.
   useEffect(() => {
     let alive = true;
     catalog
-      .meta(HERO.type, HERO.id)
-      .then(({ meta }) => {
-        if (alive) setHero({ status: "ready", meta });
+      .spotlight(6)
+      .then((metas) => {
+        if (!alive) return;
+        const pool = (metas || []).filter((meta) => meta?.id && meta?.name);
+        if (!pool.length) throw new Error("No featured titles");
+        setHero({ status: "ready", meta: pool[0], pool });
       })
-      .catch(() => {
-        if (alive) setHero({ status: "error", meta: null });
+      .catch(async () => {
+        try {
+          const { meta } = await catalog.meta(HERO.type, HERO.id);
+          if (!alive) return;
+          setHero(
+            meta?.id
+              ? { status: "ready", meta, pool: [meta] }
+              : { status: "error", meta: null, pool: [] }
+          );
+        } catch {
+          if (alive) setHero({ status: "error", meta: null, pool: [] });
+        }
       });
     return () => {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (hero.pool.length < 2) return undefined;
+    const timer = window.setInterval(() => {
+      setHero((prev) => {
+        if (prev.pool.length < 2) return prev;
+        const index = prev.pool.findIndex(
+          (item) => item.id === prev.meta?.id
+        );
+        const next = prev.pool[(index + 1) % prev.pool.length];
+        return next ? { ...prev, meta: next } : prev;
+      });
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [hero.pool]);
 
   // Warm the player chunk while the browser is idle so opening a title is instant.
   useEffect(() => {
@@ -427,6 +460,8 @@ export default function App() {
             settings={settings}
             onProgressSaved={refreshProgress}
             onPickSource={(id) => updateSetting("source", id)}
+            onOpen={openPlayer}
+            progressFor={progressFor}
           />
         </Suspense>
       ) : search ? (
