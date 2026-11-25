@@ -91,6 +91,62 @@ export const SOURCES = [
     },
   },
   {
+    id: "vidsrccc",
+    label: "VidSrc.cc",
+    needs: "either",
+    url: ({ meta, season, episode, startAt, autoplay, theme }) => {
+      const id = imdbId(meta) || tmdbId(meta);
+      if (!id) return "";
+      const search = query({
+        autoPlay: autoplay ? "true" : "false",
+        startAt: fromStart(startAt),
+        color: colour(theme),
+      });
+      return season
+        ? `https://vidsrc.cc/v2/embed/tv/${id}/${season}/${episode}${search}`
+        : `https://vidsrc.cc/v2/embed/movie/${id}${search}`;
+    },
+  },
+  {
+    id: "twoembed",
+    label: "2Embed",
+    needs: "tmdb",
+    url: ({ meta, season, episode }) => {
+      const id = tmdbId(meta);
+      if (!id) return "";
+      return season
+        ? `https://2embed.cc/embedtv/${id}&s=${season}&e=${episode}`
+        : `https://2embed.cc/embed/${id}`;
+    },
+  },
+  {
+    id: "autoembed",
+    label: "AutoEmbed",
+    needs: "tmdb",
+    url: ({ meta, season, episode }) => {
+      const id = tmdbId(meta);
+      if (!id) return "";
+      return season
+        ? `https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`
+        : `https://player.autoembed.cc/embed/movie/${id}`;
+    },
+  },
+  {
+    id: "smashystream",
+    label: "SmashyStream",
+    needs: "tmdb",
+    url: ({ meta, season, episode }) => {
+      const id = tmdbId(meta);
+      if (!id) return "";
+      const search = query({
+        tmdb: id,
+        season: season || "",
+        episode: season ? episode : "",
+      });
+      return `https://embed.smashystream.com/playere.php${search}`;
+    },
+  },
+  {
     id: "nxsha",
     label: "Nxsha",
     needs: "tmdb",

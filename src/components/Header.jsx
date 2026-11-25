@@ -40,6 +40,7 @@ export default function Header({
   const [brandOpen, setBrandOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
 
   const searchRef = useRef(null);
   const brandRef = useRef(null);
@@ -67,6 +68,15 @@ export default function Header({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // The bar is glass over the billboard; once the page scrolls it deepens so
+  // search and icons stay legible over poster art.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   // Brand menu: dismiss on outside press or Escape.
@@ -148,7 +158,7 @@ export default function Header({
   const searchVisible = searchOpen || Boolean(query);
 
   return (
-    <header className="nav-wrapper">
+    <header className={`nav-wrapper${scrolled ? " is-scrolled" : ""}`}>
       <div
         className={`solid-3d-panel${searchVisible ? " is-search-open" : ""}`}
       >
