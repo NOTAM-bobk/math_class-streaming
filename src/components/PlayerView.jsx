@@ -17,6 +17,7 @@ import {
 } from "../lib/progress.js";
 import { themeHex } from "../lib/settings.js";
 import Facts from "./Facts.jsx";
+import Shelf from "./Shelf.jsx";
 import { titlePath } from "../lib/routes.js";
 import {
   BookmarkIcon,
@@ -66,6 +67,7 @@ export default function PlayerView({
   settings,
   onProgressSaved,
   onPickSource,
+  onOpen,
 }) {
   const remember = settings?.rememberProgress !== false;
   const proxy = settings?.proxyPlayer !== false;
@@ -88,6 +90,8 @@ export default function PlayerView({
   const [failedSources, setFailedSources] = useState([]);
   const [sourceNotice, setSourceNotice] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [related, setRelated] = useState({ status: "loading", items: [] });
+  const [relatedAttempt, setRelatedAttempt] = useState(0);
 
   const iframeRef = useRef(null);
   const positionRef = useRef(0);
@@ -332,6 +336,25 @@ export default function PlayerView({
     }, 5000);
     return () => window.clearInterval(timer);
   }, [ready]);
+
+  // Neighbours for the "More like this" shelf under the player.
+  useEffect(() => {
+    if (!meta) return undefined;
+    let alive = true;
+    setRelated({ status: "loading", items: [] });
+    catalog
+      .related(meta, 14)
+      .then((items) => {
+        if (!alive) return;
+        setRelated({ status: items.length ? "ready" : "empty", items });
+      })
+      .catch(() => {
+        if (alive) setRelated({ status: "error", items: [] });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [meta, relatedAttempt]);
 
   const seasons = useMemo(
     () => [...new Set(videos.map((video) => video.season))].sort((a, b) => a - b),
@@ -630,6 +653,18 @@ export default function PlayerView({
             </ul>
           </aside>
         ) : null}
+      </div>
+
+      <div className="player-more">
+        <Shelf
+          title="More like this"
+          items={related.items}
+          status={related.status}
+          onOpen={onOpen}
+          onRetry={() => setRelatedAttempt((value) => value + 1)}
+          emptyMessage="No similar titles came back for this one."
+          index={0}
+        />
       </div>
     </main>
   );
