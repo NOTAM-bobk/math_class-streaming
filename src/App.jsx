@@ -35,7 +35,7 @@ export default function App() {
   const [input, setInput] = useState("");
   const [search, setSearch] = useState(null);
   const [player, setPlayer] = useState(null);
-  const [hero, setHero] = useState({ status: "loading", meta: null });
+  const [hero, setHero] = useState({ status: "loading", items: [] });
   const [recent, setRecent] = useState(readHistory);
   const [watchlist, setWatchlist] = useState(readWatchlist);
   const [progress, setProgress] = useState(readProgress);
@@ -88,16 +88,32 @@ export default function App() {
     };
   }, []);
 
+  // The billboard leads with the hero title and rotates through a few
+  // neighbours; the hero is the first dot, so a failed spotlight still shows it.
   useEffect(() => {
     let alive = true;
-    catalog
-      .meta(HERO.type, HERO.id)
-      .then(({ meta }) => {
-        if (alive) setHero({ status: "ready", meta });
-      })
-      .catch(() => {
-        if (alive) setHero({ status: "error", meta: null });
+    (async () => {
+      let first = null;
+      try {
+        first = (await catalog.meta(HERO.type, HERO.id)).meta || null;
+      } catch {}
+
+      let extra = [];
+      if (first) {
+        try {
+          extra = await catalog.spotlight(4);
+        } catch {}
+      }
+      if (!alive) return;
+
+      const seen = new Set();
+      const items = [first, ...extra].filter((meta) => {
+        if (!meta?.id || seen.has(meta.id)) return false;
+        seen.add(meta.id);
+        return true;
       });
+      setHero({ status: items.length ? "ready" : "error", items });
+    })();
     return () => {
       alive = false;
     };
@@ -450,12 +466,11 @@ export default function App() {
       ) : (
         <main id="main" className="view-enter">
           <Hero
-            meta={hero.meta}
+            items={hero.items}
             status={hero.status}
-            saved={saved(hero.meta)}
+            reduceMotion={settings.reduceMotion}
             onPlay={(meta) => openPlayer(meta, true)}
             onDetails={(meta) => openPlayer(meta, false)}
-            onToggleSave={toggleSave}
           />
           <div className="rows">
             {filter === "all" ? (
