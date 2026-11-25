@@ -8,6 +8,7 @@ import "./styles/settings.css";
 import "./styles/editorial.css";
 import "./styles/polish.css";
 import "./styles/footer.css";
+import "./styles/refine.css";
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {

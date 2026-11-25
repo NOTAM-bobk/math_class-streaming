@@ -4,6 +4,8 @@ import { PlayIcon } from "./Icons.jsx";
 export default function Hero({
   meta,
   status,
+  index = 0,
+  count = 0,
   onPlay,
   onDetails,
   onHoverChange,
@@ -93,6 +95,17 @@ export default function Hero({
               Details
             </button>
           </div>
+
+          {count > 1 ? (
+            <div className="billboard-dots" aria-hidden="true">
+              {Array.from({ length: count }, (_, dot) => (
+                <span
+                  key={dot}
+                  className={dot === index ? "is-current" : ""}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       )}
     </section>

@@ -148,10 +148,6 @@ body {
   color: var(--text);
   border-color: var(--line-strong);
 }
-.player-link.is-copied {
-  color: var(--accent);
-  border-color: rgba(232, 178, 95, 0.4);
-}
 
 @media (max-width: 560px) {
   .player-top {
