@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Header from "./components/Header.jsx";
+import WordmarkFooter from "./components/WordmarkFooter.jsx";
 import Hero from "./components/Hero.jsx";
 import SearchResults from "./components/SearchResults.jsx";
 import Shelf from "./components/Shelf.jsx";
@@ -7,7 +8,7 @@ import TopTen from "./components/TopTen.jsx";
 import WatchlistView from "./components/WatchlistView.jsx";
 import { BookmarkIcon } from "./components/Icons.jsx";
 import { catalog } from "./lib/catalog.js";
-import { GAMES_URL, HERO, ROWS } from "./lib/constants.js";
+import { CHAT_URL, GAMES_URL, HERO, ROWS } from "./lib/constants.js";
 import { relativeTime } from "./lib/format.js";
 import { readHistory, recordHistory, writeHistory } from "./lib/history.js";
 import { parseTitlePath, titlePath } from "./lib/routes.js";
@@ -506,15 +507,35 @@ export default function App() {
         </main>
       )}
 
-      <footer className="footer">
-        <p>
-          <strong>math_class:network</strong> is part of the{" "}
-          <a href={GAMES_URL}>math_class unblocked games</a> network.
-        </p>
-        <p className="footer-note">
-          Catalog from Cinemeta. Playback proxied from VidFast.
-        </p>
-      </footer>
+      <WordmarkFooter
+        name="math_class:network"
+        legalName="math_class network"
+        year={2026}
+        description="Movies and shows with instant playback, part of the math_class unblocked games network."
+        columns={[
+          {
+            title: "Network",
+            links: [
+              { label: "Unblocked games", href: GAMES_URL },
+              { label: "Home", href: "https://mathclasshome.vercel.app" },
+              { label: "Chat", href: CHAT_URL },
+              { label: "YouTube", href: "https://math-class-yt.vercel.app" },
+            ],
+          },
+          {
+            title: "Sources",
+            links: [
+              { label: "Cinemeta", href: "https://v3-cinemeta.strem.io" },
+              { label: "VidFast", href: "https://vidfast.pro" },
+              {
+                label: "Source on GitHub",
+                href: "https://github.com/NOTAM-bobk/math_class-streaming",
+              },
+            ],
+          },
+        ]}
+        credit={{ label: "mathclass.uk", href: "https://mathclass.uk" }}
+      />
 
       {toast ? (
         <div className="app-toast" role="status">
