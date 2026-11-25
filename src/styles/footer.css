@@ -1,0 +1,214 @@
+/* --------------------------------------------------------------------------
+   Wordmark footer - same palette as the chrome: near-black ground, warm paper
+   type, the amber accent carried by the fading wordmark.
+   -------------------------------------------------------------------------- */
+
+.wordmark-footer {
+  position: relative;
+  overflow: hidden;
+  margin: 8px var(--page-x) 0;
+  border-top: 1px solid var(--line);
+  color: var(--text);
+}
+
+.wf-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 48px;
+  padding: 54px 0 30px;
+}
+
+.wf-wordmark {
+  display: block;
+  font-family: "Instrument Serif", ui-serif, Georgia, serif;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.wf-description {
+  margin: 14px 0 0;
+  max-width: 320px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--muted);
+}
+
+.wf-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.wf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #4ade80;
+}
+
+.wf-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+}
+
+.wf-col-title {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.wf-links {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wf-links a {
+  font-size: 14px;
+  color: var(--muted);
+  transition: color 150ms var(--ease);
+}
+.wf-links a:hover {
+  color: var(--text);
+}
+
+.wf-fold {
+  display: none;
+}
+
+.wf-bottom {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 22px;
+  font-size: 12.5px;
+  color: var(--muted-2);
+}
+.wf-bottom p {
+  margin: 0;
+}
+.wf-bottom a {
+  transition: color 150ms var(--ease);
+}
+.wf-bottom a:hover {
+  color: var(--text);
+}
+.wf-credit {
+  margin-left: auto;
+}
+
+.wf-giant {
+  margin: 0 0 -0.16em;
+  font-family: "Instrument Serif", ui-serif, Georgia, serif;
+  font-size: clamp(26px, 10.5vw, 168px);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+  color: transparent;
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--text) 26%, transparent),
+    transparent 88%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+@media (pointer: coarse) {
+  .wf-links {
+    gap: 0;
+  }
+  .wf-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 900px) {
+  .wf-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+    padding: 40px 0 22px;
+  }
+  .wf-nav {
+    display: none;
+  }
+  .wf-fold {
+    display: grid;
+    gap: 2px;
+    margin: 0 -12px;
+  }
+  .wf-details {
+    border-radius: 14px;
+  }
+  .wf-details[open] {
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .wf-details summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 52px;
+    padding: 0 12px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .wf-details summary::-webkit-details-marker {
+    display: none;
+  }
+  .wf-details .wf-links {
+    margin: 0;
+    padding: 0 12px 12px;
+  }
+  .wf-details .wf-links a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 15px;
+  }
+  .wf-plus {
+    width: 16px;
+    height: 16px;
+    color: var(--muted-2);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    transition: transform 220ms var(--ease);
+  }
+  .wf-details[open] .wf-plus {
+    transform: rotate(45deg);
+  }
+  .wf-bottom {
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .wf-credit {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wf-plus,
+  .wf-links a {
+    transition: none;
+  }
+}
