@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { PANIC_STORAGE_KEY, getPanicUrl } from "./PanicButton.jsx";
 import { PANIC_URL, GAMES_URL } from "../lib/constants.js";
 import { PLAYER_THEMES } from "../lib/settings.js";
@@ -62,6 +63,8 @@ export default function SettingsModal({
   const [customInput, setCustomInput] = useState(getPanicUrl);
   const [savedNotice, setSavedNotice] = useState(false);
   const closeRef = useRef(null);
+  const closeHandler = useRef(onClose);
+  closeHandler.current = onClose;
 
   useEffect(() => {
     if (isOpen) {
@@ -75,20 +78,21 @@ export default function SettingsModal({
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
+      if (e.key !== "Escape") return;
+      // Capture and stop here so Escape closes the sheet only, never the player.
+      e.preventDefault();
+      e.stopPropagation();
+      closeHandler.current?.();
     };
-    window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown, true);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown, true);
       document.body.style.overflow = previousOverflow;
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -118,11 +122,11 @@ export default function SettingsModal({
     } catch {}
   };
 
-  return (
+  return createPortal(
     <div
       className="settings-layer"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) closeHandler.current?.();
       }}
     >
       <aside
@@ -403,6 +407,7 @@ export default function SettingsModal({
           </section>
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,24 +1,44 @@
+import { useEffect, useState } from "react";
 import Facts from "./Facts.jsx";
 import { PlayIcon } from "./Icons.jsx";
 
+const ROTATE_MS = 8000;
+
 export default function Hero({
-  meta,
+  items = [],
   status,
+  reduceMotion = false,
   onPlay,
   onDetails,
-  onHoverChange,
 }) {
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+
   const loading = status === "loading";
+  const count = items.length;
+  const current = count ? index % count : 0;
+  const meta = items[current] || null;
   const image = meta?.background || meta?.poster;
+
+  // Move through the featured titles, but never under the pointer, a focused
+  // control or a reduced-motion preference.
+  useEffect(() => {
+    if (count < 2 || paused || reduceMotion) return undefined;
+    const timer = window.setTimeout(() => {
+      setIndex((value) => (value + 1) % count);
+    }, ROTATE_MS);
+    return () => window.clearTimeout(timer);
+  }, [count, index, paused, reduceMotion]);
 
   return (
     <section
       className="billboard"
       aria-labelledby="hero-title"
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
-      onFocus={() => onHoverChange?.(true)}
-      onBlur={() => onHoverChange?.(false)}
+      aria-roledescription="carousel"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
     >
       <div className="billboard-media" aria-hidden="true">
         {image ? (
@@ -92,6 +112,25 @@ export default function Hero({
               Details
             </button>
           </div>
+
+          {count > 1 ? (
+            <div className="hero-dots" role="group" aria-label="Featured titles">
+              {items.map((item, itemIndex) => (
+                <button
+                  key={`${item.type || "movie"}-${item.id}`}
+                  type="button"
+                  className={`hero-page-dot${
+                    itemIndex === current ? " is-active" : ""
+                  }`}
+                  onClick={() => setIndex(itemIndex)}
+                  aria-label={`Show ${item.name}`}
+                  aria-current={itemIndex === current ? "true" : undefined}
+                >
+                  <span aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       )}
     </section>
