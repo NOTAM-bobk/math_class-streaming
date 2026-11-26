@@ -18,14 +18,7 @@ import {
 import { themeHex } from "../lib/settings.js";
 import Facts from "./Facts.jsx";
 import Shelf from "./Shelf.jsx";
-import { titlePath } from "../lib/routes.js";
-import {
-  BookmarkIcon,
-  ChevronLeft,
-  PlayIcon,
-  RotateIcon,
-  ShareIcon,
-} from "./Icons.jsx";
+import { BookmarkIcon, ChevronLeft, PlayIcon, RotateIcon } from "./Icons.jsx";
 
 function parseProgressMessage(raw) {
   let payload = raw;
@@ -84,7 +77,6 @@ export default function PlayerView({
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [resumeAt, setResumeAt] = useState(0);
-  const [copied, setCopied] = useState(false);
   const [sourceId, setSourceId] = useState(() =>
     SOURCE_IDS.includes(settings?.source) ? settings.source : "cinesrc"
   );
@@ -403,18 +395,6 @@ export default function PlayerView({
     setSourceNotice(`Trying ${next.label}.`);
   };
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(
-        new URL(titlePath(meta), window.location.origin).toString()
-      );
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  };
-
   useEffect(() => {
     if (!meta?.id) return undefined;
     let alive = true;
@@ -506,14 +486,6 @@ export default function PlayerView({
               {saved ? "In My List" : "My List"}
             </button>
           ) : null}
-          <button
-            type="button"
-            className={`player-link${copied ? " is-copied" : ""}`}
-            onClick={copyLink}
-          >
-            <ShareIcon />
-            {copied ? "Link copied" : "Copy link"}
-          </button>
           <a
             className="player-source"
             href={directUrl(src) || PLAYER_API}
@@ -522,9 +494,6 @@ export default function PlayerView({
           >
             Open {sourceLabel(sourceId)} in a new tab
           </a>
-          <span className="sr-only" role="status">
-            {copied ? "Title link copied" : ""}
-          </span>
         </div>
       </div>
 
