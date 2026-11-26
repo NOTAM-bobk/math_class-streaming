@@ -412,6 +412,10 @@ export default function App() {
   const visibleRows =
     filter === "all" ? ROWS : ROWS.filter((row) => row.type === filter);
 
+  const heroIndex = hero.meta
+    ? hero.pool.findIndex((item) => item.id === hero.meta.id)
+    : 0;
+
   return (
     <>
       <a className="skip-link" href="#main">
@@ -487,6 +491,8 @@ export default function App() {
           <Hero
             meta={hero.meta}
             status={hero.status}
+            index={heroIndex}
+            count={hero.pool.length}
             saved={saved(hero.meta)}
             onPlay={(meta) => openPlayer(meta, true)}
             onDetails={(meta) => openPlayer(meta, false)}
@@ -562,6 +568,8 @@ export default function App() {
             links: [
               { label: "Cinemeta", href: "https://v3-cinemeta.strem.io" },
               { label: "VidFast", href: "https://vidfast.pro" },
+              { label: "VidSrc.cc", href: "https://vidsrc.cc" },
+              { label: "2Embed", href: "https://2embed.cc" },
               {
                 label: "Source on GitHub",
                 href: "https://github.com/NOTAM-bobk/math_class-streaming",
