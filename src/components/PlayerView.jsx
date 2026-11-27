@@ -18,7 +18,14 @@ import {
 import { themeHex } from "../lib/settings.js";
 import Facts from "./Facts.jsx";
 import Shelf from "./Shelf.jsx";
-import { BookmarkIcon, ChevronLeft, PlayIcon, RotateIcon } from "./Icons.jsx";
+import {
+  BookmarkIcon,
+  ChevronLeft,
+  PlayIcon,
+  RotateIcon,
+  ShieldAlertIcon,
+} from "./Icons.jsx";
+import { triggerPanic, usePanicShortcut } from "./PanicButton.jsx";
 
 function parseProgressMessage(raw) {
   let payload = raw;
@@ -63,6 +70,9 @@ export default function PlayerView({
   onOpen,
   progressFor,
 }) {
+  // The site header is hidden while watching, so the panic shortcut lives here.
+  usePanicShortcut();
+
   const remember = settings?.rememberProgress !== false;
   const proxy = settings?.proxyPlayer !== false;
   const theme = themeHex(settings?.playerTheme);
@@ -415,19 +425,6 @@ export default function PlayerView({
 
   if (!meta) return null;
 
-  const dateLabel = (() => {
-    if (meta.releaseInfo) return meta.releaseInfo;
-    const released = meta.released ? new Date(meta.released) : null;
-    if (released && !Number.isNaN(released.getTime())) {
-      return released.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    }
-    return "";
-  })();
-
   const people = (value) => {
     if (Array.isArray(value)) return value.filter(Boolean);
     return value ? [String(value)] : [];
@@ -454,48 +451,81 @@ export default function PlayerView({
 
   return (
     <main id="main" className="player">
-      <div className="player-head">
-        <button
-          type="button"
-          className="player-back"
-          onClick={onBack}
-          aria-label="Back to browse"
-          title="Back to browse"
-        >
-          <ChevronLeft />
-        </button>
-
-        <div className="player-heading">
-          <h1>{meta.name}</h1>
-          <p className="player-kicker">
-            {[isSeries ? "Series" : "Film", dateLabel]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
+      <section className="player-stage">
+        <div className="stage">
+          <iframe
+            key={`${sourceId}-${attempt}-${season}-${episode}`}
+            ref={iframeRef}
+            src={src || "about:blank"}
+            title={`${meta.name} player${
+              isSeries ? ` season ${season} episode ${episode}` : ""
+            }`}
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowFullScreen
+            referrerPolicy="origin"
+            onLoad={(event) => {
+              if (event.currentTarget.src.includes("about:blank")) return;
+              loadedRef.current = true;
+              setReady(true);
+              setSourceNotice("");
+              setError("");
+            }}
+          />
+          {status ? (
+            <div className="stage-status" role="status">
+              {error ? null : <span className="spinner" aria-hidden="true" />}
+              <span>{status}</span>
+            </div>
+          ) : null}
         </div>
 
-        <div className="player-actions">
-          {onToggleSave ? (
+        <div className="player-bar">
+          <div className="player-bar-start">
             <button
               type="button"
-              className={`btn btn-quiet btn-sm${saved ? " is-saved" : ""}`}
-              aria-pressed={saved}
-              onClick={() => onToggleSave(meta)}
+              className="player-back"
+              onClick={onBack}
+              aria-label="Back to browse"
+              title="Back to browse"
             >
-              <BookmarkIcon filled={saved} />
-              {saved ? "In My List" : "My List"}
+              <ChevronLeft />
             </button>
-          ) : null}
-          <a
-            className="player-source"
-            href={directUrl(src) || PLAYER_API}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open {sourceLabel(sourceId)} in a new tab
-          </a>
+            <h1 className="player-title" title={meta.name}>
+              {meta.name}
+            </h1>
+          </div>
+
+          <div className="player-bar-end">
+            <button
+              type="button"
+              className="player-bar-action player-panic"
+              title="Panic: press ] to leave immediately"
+              aria-label="Panic: leave site"
+              aria-keyshortcuts="]"
+              onClick={triggerPanic}
+            >
+              <ShieldAlertIcon />
+              <span>Panic</span>
+            </button>
+            {onToggleSave ? (
+              <button
+                type="button"
+                className={`player-bar-action player-save${
+                  saved ? " is-saved" : ""
+                }`}
+                aria-pressed={saved}
+                title={saved ? "Remove from your watchlist" : "Add to your watchlist"}
+                onClick={() => onToggleSave(meta)}
+              >
+                <BookmarkIcon filled={saved} />
+                <span>{saved ? "In Watchlist" : "Watchlist"}</span>
+              </button>
+            ) : null}
+          </div>
         </div>
-      </div>
+      </section>
+
+      <div className="player-below">
 
       <div className="sourcebar">
         <label className="sourcebar-field">
@@ -521,6 +551,14 @@ export default function PlayerView({
           <RotateIcon />
           Try next source
         </button>
+        <a
+          className="player-source"
+          href={directUrl(src) || PLAYER_API}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open {sourceLabel(sourceId)} in a new tab
+        </a>
         {sourceNotice ? (
           <p className="sourcebar-note" role="status">
             {sourceNotice}
@@ -549,33 +587,6 @@ export default function PlayerView({
           </button>
         </div>
       ) : null}
-
-      <div className="stage">
-        <iframe
-          key={`${sourceId}-${attempt}-${season}-${episode}`}
-          ref={iframeRef}
-          src={src || "about:blank"}
-          title={`${meta.name} player${
-            isSeries ? ` season ${season} episode ${episode}` : ""
-          }`}
-          allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-          allowFullScreen
-          referrerPolicy="origin"
-          onLoad={(event) => {
-            if (event.currentTarget.src.includes("about:blank")) return;
-            loadedRef.current = true;
-            setReady(true);
-            setSourceNotice("");
-            setError("");
-          }}
-        />
-        {status ? (
-          <div className="stage-status" role="status">
-            {error ? null : <span className="spinner" aria-hidden="true" />}
-            <span>{status}</span>
-          </div>
-        ) : null}
-      </div>
 
       {position > 0 ? (
         <div className="player-meter">
@@ -673,6 +684,7 @@ export default function PlayerView({
           progressFor={progressFor}
           index={1}
         />
+      </div>
       </div>
     </main>
   );
