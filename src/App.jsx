@@ -422,6 +422,7 @@ export default function App() {
         Skip to content
       </a>
 
+      {player ? null : (
       <Header
         filter={filter}
         onFilter={changeFilter}
@@ -444,6 +445,7 @@ export default function App() {
         installed={installed}
         onInstall={installApp}
       />
+      )}
 
       {player ? (
         <Suspense
